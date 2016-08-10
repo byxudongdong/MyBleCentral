@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/device_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="false"
+        android:text="Devices"
+        android:textSize="23dp"
+        android:layout_alignBaseline="@+id/getDevice" />
+
+    <Button
+        android:id="@+id/getDevice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:text="@string/get_devices" />
+
+    <ScrollView android:id="@+id/svResult"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFFFF"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/getDevice">
+
+        <TextView
+            android:id="@+id/data_value"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:textSize="16sp"/>
+
+    </ScrollView>
+</RelativeLayout>
