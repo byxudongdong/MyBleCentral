@@ -55,13 +55,19 @@ public class BluetoothLeService extends Service {
             "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
     public final static String ACTION_DATA_AVAILABLE =
             "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
+    public final static String WRITE_STATUS =
+            "com.example.bluetooth.le.WRITE_STATUS";
     public final static String EXTRA_DATA =
             "com.example.bluetooth.le.EXTRA_DATA";
 
+    Boolean WriteCharacterRspFlag = false;
+
     public final static UUID UUID_NOTIFY =
-            UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb");
+            UUID.fromString("0000fff4-0000-1000-8000-00805f9b34fb");
     public final static UUID UUID_SERVICE =
-            UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb");
+            UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb");
+    public final static String DEVICE_SERVICE_POWER = "4002530D622A";// 电量获取
+    public final static UUID WRITE_DEVICE_UUID = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb");
     
     public BluetoothGattCharacteristic mNotifyCharacteristic;
     
@@ -71,20 +77,19 @@ public class BluetoothLeService extends Service {
     	Log.i(TAG, "Count is:" + gattServices.size());
     	for (BluetoothGattService gattService : gattServices)
     	{
-    		Log.i(TAG, gattService.getUuid().toString());
-			Log.i(TAG, UUID_SERVICE.toString());
+    		//Log.i(TAG, gattService.getUuid().toString());
+			//Log.i(TAG, UUID_SERVICE.toString());
     		if(gattService.getUuid().toString().equalsIgnoreCase(UUID_SERVICE.toString()))
     		{
     			List<BluetoothGattCharacteristic> gattCharacteristics =
                     gattService.getCharacteristics();
     			Log.i(TAG, "Count is:" + gattCharacteristics.size());
-    			for (BluetoothGattCharacteristic gattCharacteristic :
-                    gattCharacteristics) 
+    			for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics)
     			{
     				if(gattCharacteristic.getUuid().toString().equalsIgnoreCase(UUID_NOTIFY.toString()))
     				{
     					Log.i(TAG, gattCharacteristic.getUuid().toString());
-    					Log.i(TAG, UUID_NOTIFY.toString());
+    					//Log.i(TAG, UUID_NOTIFY.toString());
     					mNotifyCharacteristic = gattCharacteristic;
     					setCharacteristicNotification(gattCharacteristic, true);
     					broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED, gatt.getDevice().getAddress());
@@ -104,24 +109,24 @@ public class BluetoothLeService extends Service {
             Log.i(TAG, "oldStatus=" + status + " NewStates=" + newState);
             if(status == BluetoothGatt.GATT_SUCCESS)
             {
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
-                
-                broadcastUpdate(intentAction);
-                Log.i(TAG, "Connected to GATT server.");
-                // Attempts to discover services after successful connection.
-//                Log.i(TAG, "Attempting to start service discovery:" +
-//                        mBluetoothGatt.discoverServices());
-                Log.i(TAG, "Attempting to start service discovery:" + gatt.discoverServices());
-//                initServiceDiscovery(gatt);
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
-//                mBluetoothGatt.close();
-//                mBluetoothGatt = null;
-                listClose(gatt);
-                Log.i(TAG, "Disconnected from GATT server.");
-                broadcastUpdate(intentAction, gatt.getDevice().getAddress());
-            }
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    intentAction = ACTION_GATT_CONNECTED;
+
+                    broadcastUpdate(intentAction);
+                    Log.i(TAG, "Connected to GATT server.");
+                    // Attempts to discover services after successful connection.
+    //                Log.i(TAG, "Attempting to start service discovery:" +
+    //                        mBluetoothGatt.discoverServices());
+                    Log.i(TAG, "Attempting to start service discovery:" + gatt.discoverServices());
+    //                initServiceDiscovery(gatt);
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    intentAction = ACTION_GATT_DISCONNECTED;
+    //                mBluetoothGatt.close();
+    //                mBluetoothGatt = null;
+                    listClose(gatt);
+                    Log.i(TAG, "Disconnected from GATT server.");
+                    broadcastUpdate(intentAction, gatt.getDevice().getAddress());
+                }
         	}
         }
 
@@ -167,6 +172,16 @@ public class BluetoothLeService extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt,
+                                          BluetoothGattCharacteristic characteristic, int status) {
+            //得到写回应，在这里显示写结果
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                broadcastUpdate(WRITE_STATUS, characteristic);
+                WriteCharacterRspFlag = true;
+            }
         }
     };
 

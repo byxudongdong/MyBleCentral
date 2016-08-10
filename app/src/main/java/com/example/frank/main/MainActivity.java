@@ -18,19 +18,29 @@ import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class MainActivity extends ActionBarActivity {
+    private LeDeviceListAdapter mLeDeviceListAdapter;
+    private ListView listView;
+    private List<Map<String, Object>> listItems;
+
     private final static String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
@@ -59,6 +69,21 @@ public class MainActivity extends ActionBarActivity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         Log.d(TAG, "Try to bindService=" + bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE));
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+
+        listView = (ListView)findViewById(R.id.list_goods);
+        mLeDeviceListAdapter = new LeDeviceListAdapter(); //创建适配器
+        listView.setAdapter(mLeDeviceListAdapter);
+
+
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+
+        // Initializes list view adapter.
+//        mLeDeviceListAdapter = new LeDeviceListAdapter();
+//        setListAdapter(mLeDeviceListAdapter);
     }
 
     private void iniUI() {
@@ -141,6 +166,7 @@ public class MainActivity extends ActionBarActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_scan:
+                mLeDeviceListAdapter.clear();
                 clearDevice();
                 new Thread(new Runnable() {
                     public void run() {
@@ -223,10 +249,14 @@ public class MainActivity extends ActionBarActivity {
                                 if(!isEquals(device)){          //不是第一个连接
                                     Log.i("不是第一个连接","这个没连，连上先");
                                     connectBle(device);
+                                    mLeDeviceListAdapter.addDevice(device);
+                                    mLeDeviceListAdapter.notifyDataSetChanged();
                                 }
                             }else{                              //第一个连接
                                 Log.i("未连接任何蓝牙设备","连上先");
                                 connectBle(device);
+                                mLeDeviceListAdapter.addDevice(device);
+                                mLeDeviceListAdapter.notifyDataSetChanged();
                             }
                         }
                     });
@@ -277,7 +307,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.e(TAG, "Unable to initialize Bluetooth");
                 finish();
             }
-            Log.e(TAG, "mBluetoothLeService is okay");
+            Log.i(TAG, "mBluetoothLeService is okay");
         }
 
         @Override
@@ -373,5 +403,79 @@ public class MainActivity extends ActionBarActivity {
         }
 
         Log.i(TAG, "MainActivity closed!!!");
+    }
+
+    static class ViewHolder {
+        TextView deviceName;
+        TextView deviceAddress;
+        TextView deviceDb;
+    }
+
+    // Adapter for holding devices found through scanning.
+    private class LeDeviceListAdapter extends BaseAdapter {
+        private ArrayList<BluetoothDevice> mLeDevices;
+        private LayoutInflater mInflator;
+
+        public LeDeviceListAdapter() {
+            super();
+            mLeDevices = new ArrayList<BluetoothDevice>();
+            mInflator = MainActivity.this.getLayoutInflater();
+        }
+
+        public void addDevice(BluetoothDevice device) {
+            if(!mLeDevices.contains(device)) {
+                mLeDevices.add(device);
+            }
+        }
+
+        public BluetoothDevice getDevice(int position) {
+            return mLeDevices.get(position);
+        }
+
+        public void clear() {
+            mLeDevices.clear();
+        }
+
+        @Override
+        public int getCount() {
+            return mLeDevices.size();
+        }
+
+        @Override
+        public Object getItem(int i) {
+            return mLeDevices.get(i);
+        }
+
+        @Override
+        public long getItemId(int i) {
+            return i;
+        }
+
+        @Override
+        public View getView(int i, View view, ViewGroup viewGroup) {
+            ViewHolder viewHolder;
+            // General ListView optimization code.
+            if (view == null) {
+                view = mInflator.inflate(R.layout.listitem_device, null);
+                viewHolder = new ViewHolder();
+                viewHolder.deviceAddress = (TextView) view.findViewById(R.id.device_address);
+                viewHolder.deviceName = (TextView) view.findViewById(R.id.device_name);
+                viewHolder.deviceDb = (TextView) view.findViewById(R.id.device_db);
+                view.setTag(viewHolder);
+            } else {
+                viewHolder = (ViewHolder) view.getTag();
+            }
+
+            BluetoothDevice device = mLeDevices.get(i);
+            final String deviceName = device.getName();
+            if (deviceName != null && deviceName.length() > 0)
+                viewHolder.deviceName.setText(deviceName);
+            else
+                viewHolder.deviceName.setText(R.string.unknown_device);
+            viewHolder.deviceAddress.setText(device.getAddress());
+            //viewHolder.deviceDb.setText(device.EXTRA_RSSI);
+
+            return view;
+        }
     }
 }
