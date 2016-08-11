@@ -49,7 +49,7 @@ public class MainActivity extends ActionBarActivity {
     private final static String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 8000;
 
     private TextView mDataField = null, numDevice = null;
 //    private EditText edtIP = null, edtPort = null;
@@ -196,8 +196,14 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // TODO Auto-generated method stub
-                //Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId], Toast.LENGTH_SHORT).show();
-                //mBluetoothLeService.w(strMAC[singleSelectedId]);      //断开设备———————————————
+                //自定义功能
+                byte[] bytes = UpdateOpt.wakeupData;        //写入发送数据
+
+                WriteComm(mDeviceList.get(singleSelectedId) ,writecharacteristicList.get(singleSelectedId), bytes, bytes.length);
+                byte[] data = {0x00,0x00};
+                Log.i("获取版本","获取版本");
+                comm_send(mDeviceList.get(singleSelectedId) ,writecharacteristicList.get(singleSelectedId),
+                        COMM_TRANS_TYPE_SEND,COMM_CMD_TYPE_VERSION,data,2);
             }
         });
 
@@ -240,6 +246,10 @@ public class MainActivity extends ActionBarActivity {
     private void clearDevice() {
         mBluetoothLeService.disconnect();
         mDeviceContainer.clear();
+        //写数据的服务和characteristic
+        mnotyGattServiceList.clear();
+        writecharacteristicList.clear();
+
         mDeviceList.clear();
         mDataField.setText("");
         numDevice.setText(deviceText + "0");
@@ -324,7 +334,11 @@ public class MainActivity extends ActionBarActivity {
 
     private void connectBle(BluetoothDevice device) {
         mDeviceContainer.add(device);
-
+//        //写数据的服务和characteristic
+//        mnotyGattService = mBluetoothLeService.getSupportedGattService( device,"0000fff0-0000-1000-8000-00805f9b34fb" );
+//        writecharacteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"));
+//        mnotyGattServiceList.add(mnotyGattService);
+//        writecharacteristicList.add(writecharacteristic);
 //        while (true) {
 //            if (mBluetoothLeService != null) {
 //                mBluetoothLeService.connect(device.getAddress());
@@ -373,8 +387,11 @@ public class MainActivity extends ActionBarActivity {
     // ACTION_GATT_SERVICES_DISCOVERED: discovered GATT services.
     // ACTION_DATA_AVAILABLE: received data from the device.  This can be a result of read
     //                        or notification operations.
+    public static ArrayList<BluetoothGattService> mnotyGattServiceList = new ArrayList<BluetoothGattService>();
+    public static ArrayList<BluetoothGattCharacteristic> writecharacteristicList = new ArrayList<BluetoothGattCharacteristic>();
     public static BluetoothGattService mnotyGattService;
     public static BluetoothGattCharacteristic writecharacteristic;
+
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -402,6 +419,8 @@ public class MainActivity extends ActionBarActivity {
                             //写数据的服务和characteristic
                             mnotyGattService = mBluetoothLeService.getSupportedGattService( bluetoothDevice,"0000fff0-0000-1000-8000-00805f9b34fb" );
                             writecharacteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"));
+                            mnotyGattServiceList.add(mnotyGattService);
+                            writecharacteristicList.add(writecharacteristic);
                         }
                     }
                 }
@@ -602,4 +621,50 @@ public class MainActivity extends ActionBarActivity {
         }
         return bool;
     }
+
+    /*-------------------------------------------------------------------------
+* 函数: comm_send
+* 说明: 发送
+* 参数: pData---数据buffer
+		len-----条码长度
+* 返回: HY_OK------发送成功
+		HY_ERROR---发送失败
+-------------------------------------------------------------------------*/
+    /* 封包起始和结尾字节 */
+    byte    COMM_PAKET_START_BYTE    = 0x40;
+    byte    COMM_PAKET_END_BYTE		=(byte)	(0x2A);
+    /* 收发类型 */
+    byte	COMM_TRANS_TYPE_SEND		=	(0x53);	/* 'S'---send */
+    byte	COMM_TRANS_TYPE_RESP		=	(0x52);	/* 'R'---response */
+    byte	COMM_CMD_TYPE_UPDATE		=(byte)	(0xD0);	//软件升级
+    byte	COMM_CMD_TYPE_VERSION		=	(byte)(0xE0);	//R11版本信息
+
+    Boolean comm_send(BluetoothDevice bluetoothDevice,
+                      BluetoothGattCharacteristic WriteCharacteristic,
+                      byte transType, byte cmd, byte[] pData, int len)
+    {
+        byte i;
+        byte[] temp = new byte[len + 6];
+        int sum=0;
+
+        if (pData==null) return false;
+
+        temp[0] = COMM_PAKET_START_BYTE;
+        temp[1] = (byte)(len+2);
+        temp[2] = (byte)transType;
+        temp[3] = (byte)cmd;
+        //memcpy(&temp[4], pData, len);
+        System.arraycopy(pData,0,temp,4,len);
+        temp[len+5] = COMM_PAKET_END_BYTE;
+        for(i=0; i<len+3; i++)
+        {
+            sum += temp[i+1];
+        }
+        temp[len+4] = (byte)sum;
+        //Log.i("调用特征值写：", "wait...");
+        WriteComm(bluetoothDevice ,WriteCharacteristic, temp, len+6);
+
+        return true;
+    }
+
 }
