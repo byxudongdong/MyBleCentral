@@ -88,7 +88,7 @@ public class BluetoothLeService extends Service {
     			{
     				if(gattCharacteristic.getUuid().toString().equalsIgnoreCase(UUID_NOTIFY.toString()))
     				{
-    					Log.i(TAG, gattCharacteristic.getUuid().toString());
+    					Log.i("找到UUID：", gattCharacteristic.getUuid().toString());
     					//Log.i(TAG, UUID_NOTIFY.toString());
     					mNotifyCharacteristic = gattCharacteristic;
     					setCharacteristicNotification(gattCharacteristic, true);
@@ -151,7 +151,7 @@ public class BluetoothLeService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-            	Log.w(TAG, "onServicesDiscovered received: " + status);
+            	Log.i(TAG, "onServicesDiscovered received: " + status);  //0：成功
             	findService(gatt);
             } else {
             	if(gatt.getDevice().getUuids() == null)

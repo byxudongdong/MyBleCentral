@@ -300,18 +300,18 @@ public class MainActivity extends ActionBarActivity {
 
     private void connectBle(BluetoothDevice device) {
         mDeviceContainer.add(device);
-        while (true) {
-            if (mBluetoothLeService != null) {
-                mBluetoothLeService.connect(device.getAddress());
-                break;
-            } else {
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+//        while (true) {
+//            if (mBluetoothLeService != null) {
+//                mBluetoothLeService.connect(device.getAddress());
+//                break;
+//            } else {
+//                try {
+//                    Thread.sleep(250);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {
@@ -353,7 +353,7 @@ public class MainActivity extends ActionBarActivity {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                Log.e(TAG, "Only gatt, just wait");
+                Log.w(TAG, "Only gatt, just wait");
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 if (!mDeviceList.isEmpty()) {
                     String strAddress = intent.getStringExtra("DEVICE_ADDRESS");
@@ -377,7 +377,7 @@ public class MainActivity extends ActionBarActivity {
                 }
                 numDevice.setText(deviceText + mDeviceList.size());
 //                Toast.makeText(MainActivity.this, "Discover GATT Services", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Discover GATT Services");
+                Log.w(TAG, "Discover GATT Services");
                 invalidateOptionsMenu();
             }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.i(TAG, "ACTION_DATA_AVAILABLE");
