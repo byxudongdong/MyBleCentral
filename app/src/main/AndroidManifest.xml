@@ -16,7 +16,8 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.example.frank.main.MainActivity"
-            android:label="@string/app_name" >
+            android:label="一对多升级"
+            android:icon="@drawable/logo0">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

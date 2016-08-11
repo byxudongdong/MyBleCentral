@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -81,7 +84,6 @@ public class MainActivity extends ActionBarActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
                 //获得 item 里面的文本控件
                 TextView text1=(TextView)view.findViewById(R.id.device_name);
                 TextView text2=(TextView)view.findViewById(R.id.device_address);
@@ -153,24 +155,27 @@ public class MainActivity extends ActionBarActivity {
 
     String[] strDevice;
     String[] strMAC;
+    int singleSelectedId = -1;
     private void showDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setIcon(R.drawable.logo);
         builder.setTitle(getString(R.string.device_list));
         if (!mDeviceList.isEmpty()) {
             strDevice = new String[mDeviceList.size()];
             strMAC = new String[mDeviceList.size()];
             int i = 0;
             for(BluetoothDevice device: mDeviceList){
-                strDevice[i] = device.getName() + ":  " + device.getAddress();
+                strDevice[i] = device.getName() + ":" + device.getAddress();
                 strMAC[i] = device.getAddress();
                 i++;
             }
-            builder.setItems(strDevice, new DialogInterface.OnClickListener() {
+            builder.setSingleChoiceItems(strDevice, -1,new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     // TODO Auto-generated method stub
-                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
-                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
+                    singleSelectedId = which;
+//                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
+//                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
                 }
             });
         }else{
@@ -178,7 +183,26 @@ public class MainActivity extends ActionBarActivity {
             str[0] = "未连接任何设备！";
             builder.setItems(str, null);
         }
-        builder.setPositiveButton(getString(R.string.positive_button), null);
+        builder.setPositiveButton("断开", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO Auto-generated method stub
+                Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId], Toast.LENGTH_SHORT).show();
+                mBluetoothLeService.disconnect(strMAC[singleSelectedId]);      //断开设备———————————————
+            }
+        });
+
+        builder.setNegativeButton("版本信息", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO Auto-generated method stub
+                //Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId], Toast.LENGTH_SHORT).show();
+                //mBluetoothLeService.w(strMAC[singleSelectedId]);      //断开设备———————————————
+            }
+        });
+
+        builder.setNeutralButton("升级",null);
+
         builder.show();
     }
 
@@ -300,6 +324,7 @@ public class MainActivity extends ActionBarActivity {
 
     private void connectBle(BluetoothDevice device) {
         mDeviceContainer.add(device);
+
 //        while (true) {
 //            if (mBluetoothLeService != null) {
 //                mBluetoothLeService.connect(device.getAddress());
@@ -348,6 +373,8 @@ public class MainActivity extends ActionBarActivity {
     // ACTION_GATT_SERVICES_DISCOVERED: discovered GATT services.
     // ACTION_DATA_AVAILABLE: received data from the device.  This can be a result of read
     //                        or notification operations.
+    public static BluetoothGattService mnotyGattService;
+    public static BluetoothGattCharacteristic writecharacteristic;
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -372,6 +399,9 @@ public class MainActivity extends ActionBarActivity {
                     for(BluetoothDevice bluetoothDevice: mDeviceContainer){
                         if(bluetoothDevice.getAddress().equals(strAddress)){
                             mDeviceList.add(bluetoothDevice);
+                            //写数据的服务和characteristic
+                            mnotyGattService = mBluetoothLeService.getSupportedGattService( bluetoothDevice,"0000fff0-0000-1000-8000-00805f9b34fb" );
+                            writecharacteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"));
                         }
                     }
                 }
@@ -504,5 +534,72 @@ public class MainActivity extends ActionBarActivity {
 
             return view;
         }
+    }
+
+    public static Boolean receiveDataFlag = false;
+    public static Boolean WriteCharacterRspFlag = false;
+    public static Boolean WriteComm(BluetoothDevice bluetoothDevice,
+                                    BluetoothGattCharacteristic WriteCharacteristic,
+                                    byte[] SendData, int DateCount)
+    {
+        Boolean bool = false;
+        int count = 0;
+        if(DateCount>20){
+            for(int i = 0;i<DateCount;i=i+20)
+            {
+                bool = WriteCharacteristic.setValue(UpdateOpt.subBytes(SendData, i, 20));
+                //PrintLog.printHexString("Gatt写长数据",WriteCharacteristic.getValue());
+                WriteCharacterRspFlag = false;
+                BluetoothLeService.writeCharacteristic(bluetoothDevice, WriteCharacteristic);
+
+                while (!WriteCharacterRspFlag)
+                {
+//                    count++;
+//                    if(count == 5) {
+//                        count = 0;
+//                        Log.i("发送数据：", "分段发送5次失败");
+//                        break;
+//                    }
+                    //BluetoothLeService.writeCharacteristic(WriteCharacteristic);
+                    try {
+                        Thread.currentThread().sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                //Log.i("回应标志：", WriteCharacterRspFlag.toString());
+                WriteCharacterRspFlag = false;
+            }
+            bool = true;
+        }else {
+            bool = WriteCharacteristic.setValue(SendData);
+            PrintLog.printHexString("Gatt写短数据",WriteCharacteristic.getValue());
+            if (bool) {
+                BluetoothLeService.writeCharacteristic(bluetoothDevice, WriteCharacteristic);
+                WriteCharacterRspFlag = false;
+                while (!WriteCharacterRspFlag)
+                {
+                    count++;
+                    if(count == 4) {
+                        count = 0;
+                        Log.i("发送短数据：", "发送4次失败");
+                        break;
+                    }
+                    BluetoothLeService.writeCharacteristic(bluetoothDevice, WriteCharacteristic);
+                    try {
+                        Thread.currentThread().sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                bool = true;
+                Log.i("回应标志：", WriteCharacterRspFlag.toString());
+                WriteCharacterRspFlag = false;
+            } else {
+                Log.i("写特征值：", "本地写失败");
+                bool = false;
+            }
+        }
+        return bool;
     }
 }
