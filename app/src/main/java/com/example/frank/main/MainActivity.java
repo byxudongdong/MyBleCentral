@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -23,6 +24,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -74,6 +76,16 @@ public class MainActivity extends ActionBarActivity {
         mLeDeviceListAdapter = new LeDeviceListAdapter(); //创建适配器
         listView.setAdapter(mLeDeviceListAdapter);
 
+        //设置 item 的监听事件
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                //获得 item 里面的文本控件
+                TextView text1=(TextView)view.findViewById(R.id.device_name);
+                Toast.makeText(getApplicationContext(), text1.getText().toString(), Toast.LENGTH_SHORT).show();
+            }
+        });
 
     }
 
@@ -136,20 +148,37 @@ public class MainActivity extends ActionBarActivity {
         }).start();
     }
 
+    String[] strDevice;
     private void showDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.device_list));
         if (!mDeviceList.isEmpty()) {
-            String[] strDevice = new String[mDeviceList.size()];
+            strDevice = new String[mDeviceList.size()];
             int i = 0;
             for(BluetoothDevice device: mDeviceList){
                 strDevice[i] = device.getName() + ":  " + device.getAddress();
                 i++;
             }
-            builder.setItems(strDevice, null);
+            builder.setItems(strDevice, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // TODO Auto-generated method stub
+                    switch (which) {
+                        case 0:
+                            Toast.makeText(MainActivity.this, "您选中了："+strDevice[0], Toast.LENGTH_SHORT).show();
+                            break;
+                        case 1:
+                            Toast.makeText(MainActivity.this, "您选中了："+strDevice[1], Toast.LENGTH_SHORT).show();
+                            break;
+                        case 2:
+                            Toast.makeText(MainActivity.this, "您选中了："+strDevice[2], Toast.LENGTH_SHORT).show();
+                            break;
+                    }
+                }
+            });
         }else{
             String[] str = new String[1];
-            str[0] = "No Device";
+            str[0] = "未连接任何设备！";
             builder.setItems(str, null);
         }
         builder.setPositiveButton(getString(R.string.positive_button), null);
@@ -356,7 +385,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.i(TAG, "ACTION_DATA_AVAILABLE");
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 if (data != null) {
-                    if (mDataField.length() > 5) {
+                    if (mDataField.length() > 900) {
                         mDataField.setText("");
                     }
                     mDataField.append(data);
