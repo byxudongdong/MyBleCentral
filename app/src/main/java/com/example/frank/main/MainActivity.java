@@ -57,8 +57,9 @@ public class MainActivity extends ActionBarActivity {
     private BluetoothAdapter mBluetoothAdapter = null;
     private boolean mScanning;
     private String deviceText = null;
-    private LinkedList<BluetoothDevice> mDeviceContainer = new LinkedList<BluetoothDevice>();
-    private ArrayList<BluetoothDevice> mDeviceList = new ArrayList<BluetoothDevice>();
+    private LinkedList<BluetoothDevice> mDeviceContainer = new LinkedList<BluetoothDevice>();  //已连接的设备
+    private LinkedList<BluetoothDevice> mDeviceConnectable = new LinkedList<BluetoothDevice>();  //可连接的设备
+    private ArrayList<BluetoothDevice> mDeviceList = new ArrayList<BluetoothDevice>();  //所有搜索到的设备
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -83,6 +84,8 @@ public class MainActivity extends ActionBarActivity {
 
                 //获得 item 里面的文本控件
                 TextView text1=(TextView)view.findViewById(R.id.device_name);
+                TextView text2=(TextView)view.findViewById(R.id.device_address);
+                mBluetoothLeService.connect(text2.getText().toString());        //连接设备
                 Toast.makeText(getApplicationContext(), text1.getText().toString(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -149,31 +152,25 @@ public class MainActivity extends ActionBarActivity {
     }
 
     String[] strDevice;
+    String[] strMAC;
     private void showDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.device_list));
         if (!mDeviceList.isEmpty()) {
             strDevice = new String[mDeviceList.size()];
+            strMAC = new String[mDeviceList.size()];
             int i = 0;
             for(BluetoothDevice device: mDeviceList){
                 strDevice[i] = device.getName() + ":  " + device.getAddress();
+                strMAC[i] = device.getAddress();
                 i++;
             }
             builder.setItems(strDevice, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     // TODO Auto-generated method stub
-                    switch (which) {
-                        case 0:
-                            Toast.makeText(MainActivity.this, "您选中了："+strDevice[0], Toast.LENGTH_SHORT).show();
-                            break;
-                        case 1:
-                            Toast.makeText(MainActivity.this, "您选中了："+strDevice[1], Toast.LENGTH_SHORT).show();
-                            break;
-                        case 2:
-                            Toast.makeText(MainActivity.this, "您选中了："+strDevice[2], Toast.LENGTH_SHORT).show();
-                            break;
-                    }
+                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
+                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
                 }
             });
         }else{
@@ -362,7 +359,8 @@ public class MainActivity extends ActionBarActivity {
                     String strAddress = intent.getStringExtra("DEVICE_ADDRESS");
                     if(removeDevice(strAddress)){
                         int deviceNum = mDeviceList.size()-1;
-                        numDevice.setText(deviceText + deviceNum);
+                        String newStirng = deviceText + String.valueOf(deviceNum) ;
+                        numDevice.setText(newStirng );
                     }
                 }
 

@@ -124,7 +124,7 @@ public class BluetoothLeService extends Service {
     //                mBluetoothGatt.close();
     //                mBluetoothGatt = null;
                     listClose(gatt);
-                    Log.i(TAG, "Disconnected from GATT server.");
+                    Log.w(TAG, "Disconnected from GATT server.");
                     broadcastUpdate(intentAction, gatt.getDevice().getAddress());
                 }
         	}
@@ -263,6 +263,7 @@ public class BluetoothLeService extends Service {
      *         {@code BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)}
      *         callback.
      */
+
     public boolean connect(final String address) {
         if (mBluetoothAdapter == null || address == null) {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
@@ -274,10 +275,9 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "Device not found.  Unable to connect.");
             return false;
         }
-
         BluetoothGatt bluetoothGatt;
         bluetoothGatt = device.connectGatt(this, false, mGattCallback);
-        if(checkGatt(bluetoothGatt)){
+        if(checkGatt(bluetoothGatt)){           //判断是否已经连接过，没连再连接
             connectionQueue.add(bluetoothGatt);
         }
         
@@ -310,6 +310,20 @@ public class BluetoothLeService extends Service {
 //        mBluetoothGatt.disconnect();
         for(BluetoothGatt bluetoothGatt:connectionQueue){
             bluetoothGatt.disconnect();
+        }
+    }
+
+    public void disconnect(final String address) {
+        if (mBluetoothAdapter == null || connectionQueue.isEmpty()) {
+            Log.w(TAG, "BluetoothAdapter not initialized");
+            return;
+        }
+//        mBluetoothGatt.disconnect();
+        for(BluetoothGatt bluetoothGatt:connectionQueue){
+            BluetoothDevice mDevice;
+            mDevice = bluetoothGatt.getDevice();
+            if(mDevice.getAddress().equals(address))
+                bluetoothGatt.disconnect();
         }
     }
 
