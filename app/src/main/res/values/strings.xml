@@ -14,7 +14,7 @@
     <string name="device_number">已连接设备数：</string>
     <string name="device_list">已连接设备列表</string>
     <string name="send">Send</string>
-    <string name="get_devices">查看设备</string>
+    <string name="get_devices">已连设备</string>
     <string name="positive_button">确定</string>
     <!-- Menu items -->
     <string name="menu_reflesh">刷新</string>

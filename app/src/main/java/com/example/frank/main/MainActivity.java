@@ -47,11 +47,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class MainActivity extends ActionBarActivity {
     private LeDeviceListAdapter mLeDeviceListAdapter;
-    private ListView listView;
+    //private ListView listView;
     private List<Map<String, Object>> listItems;
 
     private final static String TAG = MainActivity.class.getSimpleName();
@@ -69,9 +68,9 @@ public class MainActivity extends ActionBarActivity {
     private BluetoothAdapter mBluetoothAdapter = null;
     private boolean mScanning;
     private String deviceText = null;
-    private LinkedList<BluetoothDevice> mDeviceContainer = new LinkedList<BluetoothDevice>();  //已连接的设备
+    private LinkedList<BluetoothDevice> mDeviceContainer = new LinkedList<BluetoothDevice>();  //所有搜索到的设备
     private LinkedList<BluetoothDevice> mDeviceConnectable = new LinkedList<BluetoothDevice>();  //可连接的设备
-    private ArrayList<BluetoothDevice> mDeviceList = new ArrayList<BluetoothDevice>();  //所有搜索到的设备
+    private ArrayList<BluetoothDevice> mDeviceList = new ArrayList<BluetoothDevice>();  //已连接的设备
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -87,21 +86,21 @@ public class MainActivity extends ActionBarActivity {
 
         mCustomProgressBar1 = (CircleProgressBar) findViewById(R.id.custom_progress1);
 
-        listView = (ListView)findViewById(R.id.list_goods);
+        //listView = (ListView)findViewById(R.id.list_goods);
         mLeDeviceListAdapter = new LeDeviceListAdapter(); //创建适配器
-        listView.setAdapter(mLeDeviceListAdapter);
+        //listView.setAdapter(mLeDeviceListAdapter);
 
-        //设置 item 的监听事件
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //获得 item 里面的文本控件
-                TextView text1=(TextView)view.findViewById(R.id.device_name);
-                TextView text2=(TextView)view.findViewById(R.id.device_address);
-                mBluetoothLeService.connect(text2.getText().toString());        //连接设备
-                Toast.makeText(getApplicationContext(), text1.getText().toString(), Toast.LENGTH_SHORT).show();
-            }
-        });
+//        //设置 item 的监听事件
+//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//                //获得 item 里面的文本控件
+//                TextView text1=(TextView)view.findViewById(R.id.device_name);
+//                TextView text2=(TextView)view.findViewById(R.id.device_address);
+//                mBluetoothLeService.connect(text2.getText().toString());        //连接设备
+//                Toast.makeText(getApplicationContext(), text1.getText().toString(), Toast.LENGTH_SHORT).show();
+//            }
+//        });
 
     }
 
@@ -128,6 +127,55 @@ public class MainActivity extends ActionBarActivity {
                 showDialog();
             }
         });
+    }
+
+    public int singleSelectedId1;
+    public void devicelist(View v){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setIcon(R.drawable.logo);
+        builder.setTitle("可用设备：");
+        if (!mDeviceContainer.isEmpty()) {
+            strDevice = new String[mDeviceContainer.size()];
+            strMAC = new String[mDeviceContainer.size()];
+            int i = 0;
+            for(BluetoothDevice device: mDeviceContainer){
+                strDevice[i] = device.getName() ;
+                strMAC[i] = device.getAddress();
+                i++;
+            }
+            builder.setSingleChoiceItems(strDevice, -1,new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // TODO Auto-generated method stub
+                    singleSelectedId1 = which;
+//                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
+//                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
+                }
+            });
+        }else{
+            String[] str = new String[1];
+            str[0] = "未找到任何设备！";
+            builder.setItems(str, null);
+        }
+        builder.setPositiveButton("连接设备", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO Auto-generated method stub
+                Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId1], Toast.LENGTH_SHORT).show();
+                mBluetoothLeService.connect(strMAC[singleSelectedId1]);      //连接设备———————————————
+            }
+        });
+
+        builder.setNegativeButton("取消选择", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // TODO Auto-generated method stub
+
+            }
+        });
+
+        builder.show();
+
     }
 
     private void iniBle() {
@@ -200,6 +248,7 @@ public class MainActivity extends ActionBarActivity {
                 // TODO Auto-generated method stub
                 Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId], Toast.LENGTH_SHORT).show();
                 mBluetoothLeService.disconnect(strMAC[singleSelectedId]);      //断开设备———————————————
+                Removeview();
             }
         });
 
@@ -476,16 +525,24 @@ public class MainActivity extends ActionBarActivity {
         }
     };
 
+    LinearLayout myLayout ; // myLayout是我这个activity的界面的root layout
+    View hiddenView ; //hiddenView是隐藏的View，
     public void AddBarview(String name,String State )
     {
-        LinearLayout myLayout = (LinearLayout) findViewById ( R.id.device_op) ; // myLayout是我这个activity的界面的root layout
-        View hiddenView = getLayoutInflater().inflate( R.layout.device, myLayout, false ) ; //hiddenView是隐藏的View，
+        myLayout = (LinearLayout) findViewById ( R.id.device_op);
+        hiddenView = getLayoutInflater().inflate( R.layout.device, myLayout, false ) ;
         //从hidden_view.xml文件导入
         myLayout.addView ( hiddenView ) ;
         TextView updatename = (TextView)findViewById(R.id.update_name);
         TextView update_info = (TextView)findViewById(R.id.update_info);
         updatename.setText(name);
         update_info.setText(State);
+    }
+
+    public void Removeview()
+    {
+        //从hidden_view.xml文件导入
+        myLayout.removeView ( hiddenView );
     }
 
     private boolean removeDevice(String strAddress) {
@@ -663,7 +720,7 @@ public class MainActivity extends ActionBarActivity {
         return bool;
     }
 
-    /*-------------------------------------------------------------------------
+/**-------------------------------------------------------------------------
 * 函数: comm_send
 * 说明: 发送
 * 参数: pData---数据buffer
