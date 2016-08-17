@@ -22,4 +22,6 @@
     <string name="menu_disconnect">断开</string>
     <string name="menu_scan">搜索</string>
     <string name="menu_stop">断开</string>
+
+    <string name="progress_text_format_pattern">t %d ps</string>
 </resources>

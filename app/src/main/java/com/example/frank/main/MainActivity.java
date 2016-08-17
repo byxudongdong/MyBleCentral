@@ -1,5 +1,6 @@
 package com.example.frank.main;
 
+import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -29,10 +30,14 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.frank.main.bar.CircleProgressBar;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +60,7 @@ public class MainActivity extends ActionBarActivity {
 //    private EditText edtIP = null, edtPort = null;
     private ScrollView svResult = null;
     private Button btnDevice = null;
+    private CircleProgressBar mCustomProgressBar1;
 
     private BluetoothLeService mBluetoothLeService = null;
     private BluetoothAdapter mBluetoothAdapter = null;
@@ -75,6 +81,8 @@ public class MainActivity extends ActionBarActivity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         Log.d(TAG, "Try to bindService=" + bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE));
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+
+        mCustomProgressBar1 = (CircleProgressBar) findViewById(R.id.custom_progress1);
 
         listView = (ListView)findViewById(R.id.list_goods);
         mLeDeviceListAdapter = new LeDeviceListAdapter(); //创建适配器
@@ -97,7 +105,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     public void onResume(){
         super.onResume();
-
+        simulateProgress();
         // Initializes list view adapter.
 //        mLeDeviceListAdapter = new LeDeviceListAdapter();
 //        setListAdapter(mLeDeviceListAdapter);
@@ -416,6 +424,7 @@ public class MainActivity extends ActionBarActivity {
                     for(BluetoothDevice bluetoothDevice: mDeviceContainer){
                         if(bluetoothDevice.getAddress().equals(strAddress)){
                             mDeviceList.add(bluetoothDevice);
+                            AddBarview(mDeviceList.get(mDeviceList.size()-1).getName() ,"准备就绪！");
                             //写数据的服务和characteristic
                             mnotyGattService = mBluetoothLeService.getSupportedGattService( bluetoothDevice,"0000fff0-0000-1000-8000-00805f9b34fb" );
                             writecharacteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"));
@@ -429,13 +438,22 @@ public class MainActivity extends ActionBarActivity {
                 Log.w(TAG, "Discover GATT Services");
                 invalidateOptionsMenu();
             }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                Log.i(TAG, "ACTION_DATA_AVAILABLE");
+                //Log.i(TAG, "ACTION_DATA_AVAILABLE");
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
-                if (data != null) {
+                String device = data.substring(0,17);
+                String devicedata = data.substring(17);
+                Log.w("接收数据：",data);
+                if (devicedata != null) {
                     if (mDataField.length() > 900) {
                         mDataField.setText("");
                     }
-                    mDataField.append(data);
+                    //mDataField.append(data);
+                    if(data.length()>2) {
+                        mDataField.append(data, 0, data.length());
+                        String newstring = String.valueOf((char)0x2A);
+                        if(data.contains(newstring))
+                            mDataField.append("\r\n");
+                    }
 
                     svResult.post(new Runnable() {
                         public void run() {
@@ -446,6 +464,16 @@ public class MainActivity extends ActionBarActivity {
             }
         }
     };
+
+    public void AddBarview(String name,String State )
+    {
+        LinearLayout myLayout = (LinearLayout) findViewById ( R.id.device_op) ; // myLayout是我这个activity的界面的root layout
+        View hiddenView = getLayoutInflater().inflate( R.layout.device, myLayout, false ) ; //hiddenView是隐藏的View，
+        //从hidden_view.xml文件导入
+        myLayout.addView ( hiddenView ) ;
+        TextView updatename = (TextView)findViewById(R.id.update_name);
+
+    }
 
     private boolean removeDevice(String strAddress) {
         for(final BluetoothDevice bluetoothDevice:mDeviceList){
@@ -606,7 +634,7 @@ public class MainActivity extends ActionBarActivity {
                     }
                     BluetoothLeService.writeCharacteristic(bluetoothDevice, WriteCharacteristic);
                     try {
-                        Thread.currentThread().sleep(50);
+                        Thread.currentThread().sleep(30);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -639,6 +667,7 @@ public class MainActivity extends ActionBarActivity {
     byte	COMM_CMD_TYPE_UPDATE		=(byte)	(0xD0);	//软件升级
     byte	COMM_CMD_TYPE_VERSION		=	(byte)(0xE0);	//R11版本信息
 
+
     Boolean comm_send(BluetoothDevice bluetoothDevice,
                       BluetoothGattCharacteristic WriteCharacteristic,
                       byte transType, byte cmd, byte[] pData, int len)
@@ -665,6 +694,22 @@ public class MainActivity extends ActionBarActivity {
         WriteComm(bluetoothDevice ,WriteCharacteristic, temp, len+6);
 
         return true;
+    }
+
+    private void simulateProgress() {
+        ValueAnimator animator = ValueAnimator.ofInt(0, 100);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int progress = (int) animation.getAnimatedValue();
+//                mLineProgressBar.setProgress(progress);
+//                mSolidProgressBar.setProgress(progress);
+                mCustomProgressBar1.setProgress(progress);
+            }
+        });
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.setDuration(4000);
+        animator.start();
     }
 
 }

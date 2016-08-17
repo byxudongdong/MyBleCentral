@@ -165,14 +165,14 @@ public class BluetoothLeService extends Service {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+                broadcastUpdate( gatt, ACTION_DATA_AVAILABLE, characteristic);
             }
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+            broadcastUpdate(gatt, ACTION_DATA_AVAILABLE, characteristic);
         }
 
         @Override
@@ -180,7 +180,7 @@ public class BluetoothLeService extends Service {
                                           BluetoothGattCharacteristic characteristic, int status) {
             //得到写回应，在这里显示写结果
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(WRITE_STATUS, characteristic);
+                broadcastUpdate(gatt , WRITE_STATUS, characteristic);
                 WriteCharacterRspFlag = true;
             }
         }
@@ -197,12 +197,12 @@ public class BluetoothLeService extends Service {
         sendBroadcast(intent);
     }
 
-    private void broadcastUpdate(final String action,
+    private void broadcastUpdate(BluetoothGatt gatt,final String action,
                                  final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
         final byte[] data = characteristic.getValue();
         if (data != null && data.length > 0) {
-            intent.putExtra(EXTRA_DATA, new String(data));
+            intent.putExtra(EXTRA_DATA, gatt.getDevice().getAddress() +new String(data));
         }
         sendBroadcast(intent);
     }
