@@ -22,6 +22,7 @@ import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,6 +43,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 
@@ -400,6 +403,7 @@ public class MainActivity extends ActionBarActivity {
     public static BluetoothGattService mnotyGattService;
     public static BluetoothGattCharacteristic writecharacteristic;
 
+    public String data="";
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -439,22 +443,29 @@ public class MainActivity extends ActionBarActivity {
                 invalidateOptionsMenu();
             }else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 //Log.i(TAG, "ACTION_DATA_AVAILABLE");
-                String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
+                data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 String device = data.substring(0,17);
                 String devicedata = data.substring(17);
                 Log.w("接收数据：",data);
-                if (devicedata != null) {
+                if (!devicedata .equals("")) {
                     if (mDataField.length() > 900) {
                         mDataField.setText("");
                     }
                     //mDataField.append(data);
-                    if(data.length()>2) {
-                        mDataField.append(data, 0, data.length());
-                        String newstring = String.valueOf((char)0x2A);
-                        if(data.contains(newstring))
+                    if(devicedata.length()>1) {
+                        if(devicedata.startsWith(String.valueOf((char)0x40))
+                                && devicedata.endsWith(String.valueOf((char)0x2A)) ){
+                            mDataField.append(devicedata, 4, devicedata.length() - 2);
                             mDataField.append("\r\n");
+                        }else if(devicedata.startsWith(String.valueOf((char)0x40))) {
+                            mDataField.append(devicedata, 4, devicedata.length());
+                        }else if(devicedata.endsWith(String.valueOf((char)0x2A))) {
+                            mDataField.append(devicedata, 0, devicedata.length() - 2);
+                            mDataField.append("\r\n");
+                        }else {
+                            mDataField.append(devicedata, 0, devicedata.length() );
+                        }
                     }
-
                     svResult.post(new Runnable() {
                         public void run() {
                             svResult.fullScroll(ScrollView.FOCUS_DOWN);
@@ -472,7 +483,9 @@ public class MainActivity extends ActionBarActivity {
         //从hidden_view.xml文件导入
         myLayout.addView ( hiddenView ) ;
         TextView updatename = (TextView)findViewById(R.id.update_name);
-
+        TextView update_info = (TextView)findViewById(R.id.update_info);
+        updatename.setText(name);
+        update_info.setText(State);
     }
 
     private boolean removeDevice(String strAddress) {
@@ -710,6 +723,42 @@ public class MainActivity extends ActionBarActivity {
         animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setDuration(4000);
         animator.start();
+    }
+
+    /**
+     * 菜单、返回键响应
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // TODO Auto-generated method stub
+        if(keyCode == KeyEvent.KEYCODE_BACK)
+        {
+            exitBy2Click(); //调用双击退出函数
+        }
+        return false;
+    }
+    /**
+     * 双击退出函数
+     */
+    private static Boolean isExit = false;
+
+    private void exitBy2Click() {
+        Timer tExit = null;
+        if (isExit == false) {
+            isExit = true; // 准备退出
+            Toast.makeText(this, "再按一次退出程序", Toast.LENGTH_SHORT).show();
+            tExit = new Timer();
+            tExit.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    isExit = false; // 取消退出
+                }
+            }, 2000); // 如果2秒钟内没有按下返回键，则启动定时器取消掉刚才执行的任务
+
+        } else {
+            finish();
+            System.exit(0);
+        }
     }
 
 }
