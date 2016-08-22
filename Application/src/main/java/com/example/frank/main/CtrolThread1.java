@@ -1,7 +1,9 @@
 package com.example.frank.main;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -37,24 +39,24 @@ public class CtrolThread1 {
     final int UPDATE_STEP_WAIT_IMAGE_RES	=	3;
     final int UPDATE_STEP_WAIT_CRC_RES	=	4;
     final int UPDATE_STEP_CRC_RES_RECV 	=	5;
-    public int update_sendLen=0,filedataLen=0,updateIdex= 0,update_step = UPDATE_STEP_SEND_REQUEST;
-    public long startTime=0,consumingTime=0;  //開始時間
+    private int update_sendLen=0,filedataLen=0,updateIdex= 0,update_step = UPDATE_STEP_SEND_REQUEST;
+    private long startTime=0,consumingTime=0;  //開始時間
     FileInputStream fin = null;
-    byte [] buffer = null;
-    public int imageIndex = 0,imageNum=0;
-    Boolean supportCipher = false;
-    tUpdate_info Update_info = new tUpdate_info();
-    MyNative myNative = new MyNative();
-    UpdateOpt updateOpt = new UpdateOpt();
-    Thread mthread;
+    private byte [] buffer = null;
+    private int imageIndex = 0,imageNum=0;
+    private Boolean supportCipher = false;
+    private tUpdate_info Update_info = new tUpdate_info();
+    private MyNative myNative = new MyNative();
+    private UpdateOpt updateOpt = new UpdateOpt();
+    private Thread mthread;
     Boolean updateFlag = false;
-    public Boolean receiveDataFlag = false;
-    public Boolean WriteCharacterRspFlag = false;
-    public boolean mConnected = false;
-    public BluetoothGattCharacteristic writecharacteristic;
-    public int update_sendSize;
-    public BluetoothDevice bluetoothDevice;
-    public int myProgress = 0;
+    private Boolean receiveDataFlag = false;
+    Boolean WriteCharacterRspFlag = false;
+    private boolean mConnected = false;
+    private BluetoothGattCharacteristic writecharacteristic;
+    private int update_sendSize;
+    private BluetoothDevice bluetoothDevice;
+    private int myProgress = 0;
 
     public void writeBleDevice(BluetoothDevice device)
     {
@@ -279,10 +281,11 @@ public class CtrolThread1 {
 //                    PrintLog.printHexString("当前数据为：", SendData);
 //                }
                 try {
-                    Thread.currentThread().sleep(10);
+                    Thread.currentThread().sleep(20);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
                 long newtime = System.currentTimeMillis();  //開始時間
                 while (!WriteCharacterRspFlag)
                 {
@@ -293,13 +296,13 @@ public class CtrolThread1 {
 //                        break;
 //                    }
                     if(System.currentTimeMillis() - newtime > 20){
-                        Log.d("写数据等待回应","失败？");
+                        Log.d("写数据等待回应","失败1111111？");
                         break;
                     }
 
                     //BluetoothLeService.writeCharacteristic(WriteCharacteristic);
                     try {
-                        Thread.currentThread().sleep(8);
+                        Thread.currentThread().sleep(10);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -364,7 +367,7 @@ public class CtrolThread1 {
             startTime = System.currentTimeMillis();  //開始時間
             break;
             case UPDATE_STEP_SEND_IMAGE:
-                Log.w("发送升级文件：", "发送升级文件"+String.valueOf(update_sendSize)
+                Log.w("发送升级文件1：", "发送升级文件111111111:"+String.valueOf(update_sendSize)
                         + ":"+String.valueOf(filedataLen) );
                 //sendMessage( 3 );
                 /* 发送升级数据 */
@@ -393,7 +396,7 @@ public class CtrolThread1 {
             case UPDATE_STEP_WAIT_IMAGE_RES:
                 /* 等待升级请求和升级数据回应 */
                 consumingTime = System.currentTimeMillis();
-                if ((consumingTime - startTime) >= 900)
+                if ((consumingTime - startTime) >= 800)
                 {
 			        /* 超时重发 */
                     Log.w("发送升级文件：", "超时重发");
@@ -505,13 +508,13 @@ public class CtrolThread1 {
         {
             //PrintLog.printHexString("当前数据为：", temp);
             try {
-                Thread.currentThread().sleep(100);
+                Thread.currentThread().sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }else{
             try {
-                Thread.currentThread().sleep(20);
+                Thread.currentThread().sleep(30);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -608,7 +611,7 @@ public class CtrolThread1 {
                         update_step = UPDATE_STEP_SEND_IMAGE;
                         if (len > 3)
                         {
-                            Log.i("芯片支持OAD0....","芯片支持OAD");
+                            Log.i("芯片支持OAD01....","芯片支持OAD1");
                             supportCipher = true;
                         }
                         else
@@ -681,7 +684,7 @@ public class CtrolThread1 {
                     Log.w("数据包接收错误，重发","数据包接收错误");
 			        /* 数据包接收错误，重发 */
                 }
-                update_step--;
+                update_step = UPDATE_STEP_SEND_IMAGE;
                 break;
         }
 
