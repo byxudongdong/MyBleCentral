@@ -278,7 +278,7 @@ public class CtrolThread {
                 bool = WriteCharacteristic.setValue(UpdateOpt.subBytes(SendData, i, 20));
                 //PrintLog.printHexString("Gatt写长数据",WriteCharacteristic.getValue());
                 WriteCharacterRspFlag = false;
-                Log.i("写20个字节","写调用");
+                Log.i("写20个字节00000","写调用");
                 BluetoothLeService.writeCharacteristic( bluetoothDevice, WriteCharacteristic);//BluetoothLeService.writeCharacteristic(WriteCharacteristic);
 //                if (update_sendSize == 79968) {
 //                    PrintLog.printHexString("当前数据为：", SendData);
@@ -370,7 +370,7 @@ public class CtrolThread {
             startTime = System.currentTimeMillis();  //開始時間
             break;
             case UPDATE_STEP_SEND_IMAGE:
-                Log.w("发送升级文件：", "发送升级文件000000:"+String.valueOf(update_sendSize)
+                Log.w("发送升级文件0：", "发送升级文件000000:"+String.valueOf(update_sendSize)
                         + ":"+String.valueOf(filedataLen) );
                 //sendMessage( 3 );
                 /* 发送升级数据 */
@@ -614,7 +614,7 @@ public class CtrolThread {
                         update_step = UPDATE_STEP_SEND_IMAGE;
                         if (len > 3)
                         {
-                            Log.i("芯片支持OAD0....","芯片支持OAD");
+                            Log.i("芯片支持OAD0....","芯片支持OAD00");
                             supportCipher = true;
                         }
                         else

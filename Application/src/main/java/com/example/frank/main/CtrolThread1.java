@@ -276,12 +276,13 @@ public class CtrolThread1 {
                 bool = WriteCharacteristic.setValue(UpdateOpt.subBytes(SendData, i, 20));
                 //PrintLog.printHexString("Gatt写长数据",WriteCharacteristic.getValue());
                 WriteCharacterRspFlag = false;
+                Log.i("写20个字节11111","写调用");
                 BluetoothLeService.writeCharacteristic( bluetoothDevice, WriteCharacteristic);//BluetoothLeService.writeCharacteristic(WriteCharacteristic);
 //                if (update_sendSize == 79968) {
 //                    PrintLog.printHexString("当前数据为：", SendData);
 //                }
                 try {
-                    Thread.currentThread().sleep(20);
+                    Thread.currentThread().sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -297,12 +298,13 @@ public class CtrolThread1 {
 //                    }
                     if(System.currentTimeMillis() - newtime > 20){
                         Log.d("写数据等待回应","失败1111111？");
-                        break;
+						newtime = System.currentTimeMillis();  //開始時間
+                        //break;
                     }
 
                     //BluetoothLeService.writeCharacteristic(WriteCharacteristic);
                     try {
-                        Thread.currentThread().sleep(10);
+                        Thread.currentThread().sleep(9);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -396,7 +398,7 @@ public class CtrolThread1 {
             case UPDATE_STEP_WAIT_IMAGE_RES:
                 /* 等待升级请求和升级数据回应 */
                 consumingTime = System.currentTimeMillis();
-                if ((consumingTime - startTime) >= 800)
+                if ((consumingTime - startTime) >= 600)
                 {
 			        /* 超时重发 */
                     Log.w("发送升级文件：", "超时重发");
@@ -508,13 +510,13 @@ public class CtrolThread1 {
         {
             //PrintLog.printHexString("当前数据为：", temp);
             try {
-                Thread.currentThread().sleep(200);
+                Thread.currentThread().sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }else{
             try {
-                Thread.currentThread().sleep(30);
+                Thread.currentThread().sleep(5);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -611,7 +613,7 @@ public class CtrolThread1 {
                         update_step = UPDATE_STEP_SEND_IMAGE;
                         if (len > 3)
                         {
-                            Log.i("芯片支持OAD01....","芯片支持OAD1");
+                            Log.i("芯片支持OAD01....","芯片支持OAD11");
                             supportCipher = true;
                         }
                         else
@@ -632,7 +634,7 @@ public class CtrolThread1 {
                                 Update_info.image_crc,
                                 Update_info.image_data);
                         filedataLen = UpdateOpt.byteArrayToInt(Update_info.image_size);
-                        Log.w("更换升级文件1：=",String.valueOf(imageIndex) +":" + String.valueOf(filedataLen));
+                        Log.w("更换升级文件1111：=",String.valueOf(imageIndex) +":" + String.valueOf(filedataLen));
                         break;
                     case UPDATE_REJECT_REASON_SIZE_ERR:
 			        /* 升级包大小错误(超过限制) */

@@ -346,7 +346,8 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.menu_scan:
                 mLeDeviceListAdapter.clear();
-                clearDevice();
+                //clearDevice();
+                mDeviceContainer.clear();
                 new Thread(new Runnable() {
                     public void run() {
                         try {
@@ -360,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
-                clearDevice();
+                //clearDevice();
                 break;
         }
         return true;
@@ -618,10 +619,12 @@ public class MainActivity extends AppCompatActivity {
                 String deviceMac = new String(mac);
                 if(deviceMac.equals(mDeviceList.get(0).getAddress())) {
                     ctrolThread.WriteCharacterRspFlag = true;
+                    Log.i("写数据结果00000000","回应成功");
                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress())) {
                     ctrolThread1.WriteCharacterRspFlag = true;
+                    Log.i("写数据结果11111111","回应成功");
                 }
-                Log.i("写数据结果","回应成功");
+                Log.d("写数据结果","回应成功");
 
             }
         }
