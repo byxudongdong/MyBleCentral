@@ -399,7 +399,7 @@ public class CtrolThread {
             case UPDATE_STEP_WAIT_IMAGE_RES:
                 /* 等待升级请求和升级数据回应 */
                 consumingTime = System.currentTimeMillis();
-                if ((consumingTime - startTime) >= 600)
+                if ((consumingTime - startTime) >= 900)
                 {
 			        /* 超时重发 */
                     Log.w("发送升级文件：", "超时重发");
@@ -687,7 +687,7 @@ public class CtrolThread {
                     Log.w("数据包接收错误000，重发","数据包接收错误");
 			        /* 数据包接收错误，重发 */
                 }
-                update_step = UPDATE_STEP_SEND_IMAGE;
+                update_step --;         //有待查看,影响相应速度????????????????????????????????????????
                 break;
         }
 
