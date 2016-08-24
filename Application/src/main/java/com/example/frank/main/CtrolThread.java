@@ -280,7 +280,7 @@ public class CtrolThread {
                 bool = WriteCharacteristic.setValue(UpdateOpt.subBytes(SendData, i, 20));
                 //PrintLog.printHexString("Gatt写长数据",WriteCharacteristic.getValue());
                 WriteCharacterRspFlag = false;
-                Log.i("写20个字节00000","写调用");
+                Log.d("写20个字节00000","写调用");
                 BluetoothLeService.writeCharacteristic( bluetoothDevice, WriteCharacteristic);//BluetoothLeService.writeCharacteristic(WriteCharacteristic);
 //                if (update_sendSize == 79968) {
 //                    PrintLog.printHexString("当前数据为：", SendData);
@@ -525,12 +525,12 @@ public class CtrolThread {
 
         imageReadLen = update_readImageData(temp, update_sendSize, UPDATE_SEND_PAKET_SIZE);
 
-        Boolean wait = (update_sendSize+112)/1024-(update_sendSize/1024)>0;
+        Boolean wait = ((update_sendSize)/1024-((update_sendSize+112*-1) / 1024)) > 0;
         if(wait)
         {
             //PrintLog.printHexString("当前数据为：", temp);
             try {
-                Thread.currentThread().sleep(400);
+                Thread.currentThread().sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -619,12 +619,12 @@ public class MainActivity extends AppCompatActivity {
                 String deviceMac = new String(mac);
                 if(deviceMac.equals(mDeviceList.get(0).getAddress())) {
                     ctrolThread.WriteCharacterRspFlag = true;
-                    Log.i("写数据结果00000000","回应成功");
+                    Log.d("写数据结果00000000","回应成功");
                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress())) {
                     ctrolThread1.WriteCharacterRspFlag = true;
-                    Log.i("写数据结果11111111","回应成功");
+                    Log.d("写数据结果11111111","回应成功");
                 }
-                Log.d("写数据结果","回应成功");
+                //Log.d("写数据结果","回应成功");
 
             }
         }
@@ -977,7 +977,7 @@ public class MainActivity extends AppCompatActivity {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    if(ctrolThread.updateFlag == false){
+                    if(!ctrolThread.updateFlag){
                         update = new Thread(ctrolThread.sendData, "Update");
                         update.start();
                     }else {
@@ -991,7 +991,7 @@ public class MainActivity extends AppCompatActivity {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    if(ctrolThread1.updateFlag == false){
+                    if(!ctrolThread1.updateFlag){
                         update1 = new Thread(ctrolThread1.sendData, "Update1");
                         update1.start();
                     }else {
