@@ -166,6 +166,7 @@ public class CtrolThread1 {
                         break;
                     }
                     //Log.i("升级流程切换：", "wait...");
+
                     update_step = update_Switch();
 
 //                try {
@@ -345,6 +346,7 @@ public class CtrolThread1 {
         return bool;
     }
 
+    int repeatcount = 0,repeatflag =0;
     public int update_Switch()
     {
         //startTime = System.currentTimeMillis();  //開始時間
@@ -377,6 +379,10 @@ public class CtrolThread1 {
                     update_step = UPDATE_STEP_WAIT_CRC_RES;
                     break;
                 }
+                if(filedataLen == 0)
+                {
+                    updateFlag = false;
+                }
                 update_sendLen = update_sendImageData();
                 if( update_sendLen < UPDATE_SEND_PAKET_SIZE && update_sendSize>60000) {
                     startTime = System.currentTimeMillis();  //開始時間
@@ -384,6 +390,17 @@ public class CtrolThread1 {
                     break;
                 }
                 startTime = System.currentTimeMillis();  //開始時間
+                if(repeatcount != update_sendSize)
+                {
+                    repeatcount = update_sendSize;
+                    repeatflag = 0;
+                }else{
+                    repeatflag++;
+                    if(repeatflag >5) {
+                        Log.e("多次重发数据:", "得不到回应,认为死机");
+                        updateFlag = false;
+                    }
+                }
                 update_step++;
                 break;
             case UPDATE_STEP_WAIT_REQUEST_RES:
@@ -510,7 +527,7 @@ public class CtrolThread1 {
         {
             //PrintLog.printHexString("当前数据为：", temp);
             try {
-                Thread.currentThread().sleep(100);
+                Thread.currentThread().sleep(400);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

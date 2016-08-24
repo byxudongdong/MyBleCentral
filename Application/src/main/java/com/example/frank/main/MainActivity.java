@@ -973,11 +973,11 @@ public class MainActivity extends AppCompatActivity {
                 case 1:
                     ctrolThread.updateFlag = false;
                     try {
-                        Thread.currentThread().sleep(100);
+                        Thread.currentThread().sleep(300);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    if(update ==null){
+                    if(ctrolThread.updateFlag == false){
                         update = new Thread(ctrolThread.sendData, "Update");
                         update.start();
                     }else {
@@ -985,7 +985,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
                 case 2:
-                    if(update1 ==null){
+                    ctrolThread1.updateFlag = false;
+                    try {
+                        Thread.currentThread().sleep(300);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if(ctrolThread1.updateFlag == false){
                         update1 = new Thread(ctrolThread1.sendData, "Update1");
                         update1.start();
                     }else {
