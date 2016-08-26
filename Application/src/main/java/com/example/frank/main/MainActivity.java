@@ -173,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
 //                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
 //                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
                 }
-            });
+    });
         }else{
             String[] str = new String[1];
             str[0] = "未找到任何设备！";
@@ -361,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
-                //clearDevice();
+                clearDevice();
                 break;
         }
         return true;
@@ -526,15 +526,16 @@ public class MainActivity extends AppCompatActivity {
                 if (!mDeviceList.isEmpty()) {
                     String strAddress = intent.getStringExtra("DEVICE_ADDRESS");
                     Log.e("设备断开",strAddress);
-                    if(removeDevice(strAddress)){
-                        int deviceNum = mDeviceList.size()-1;
-                        String newStirng = deviceText + String.valueOf(deviceNum);
-                        numDevice.setText(newStirng );
-                    }
+//                    if(removeDevice(strAddress)){
+//                        int deviceNum = mDeviceList.size()-1;
+//                        String newStirng = deviceText + String.valueOf(deviceNum);
+//                        numDevice.setText(newStirng );
+//                    }
                     for(int ii=0;ii<mDeviceList.size();ii++){
                         if(mDeviceList.get(ii).getAddress().equals(strAddress))
                         {
-                            Removeview(ii+1);
+                            //Removeview(ii+1);
+                            Devicelayout.remove(ii);
                         }
 
                     }
@@ -590,9 +591,9 @@ public class MainActivity extends AppCompatActivity {
                             mDataField.append("\r\n");
                             if(devicedata[2] == (byte)0x52  )
                             {
-                                if(deviceMac.equals(mDeviceList.get(0).getAddress())) {
+                                if(deviceMac.equals(mDeviceList.get(0).getAddress()) ) {
                                     ctrolThread.updateReceive_respons(devicedata, devicedata.length - 4);
-                                }else if(deviceMac.equals(mDeviceList.get(1).getAddress())){
+                                }else if(deviceMac.equals(mDeviceList.get(1).getAddress()) ){
                                     ctrolThread1.updateReceive_respons(devicedata, devicedata.length - 4);
                                 }
                             }
@@ -617,7 +618,7 @@ public class MainActivity extends AppCompatActivity {
                 byte[] mac = new byte[17];
                 mac = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
                 String deviceMac = new String(mac);
-                if(deviceMac.equals(mDeviceList.get(0).getAddress())) {
+                if(deviceMac.equals(mDeviceList.get(0).getAddress()) ) {
                     ctrolThread.WriteCharacterRspFlag = true;
                     Log.d("写数据结果00000000","回应成功");
                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress())) {
