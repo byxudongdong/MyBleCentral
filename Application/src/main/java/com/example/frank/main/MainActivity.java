@@ -361,6 +361,12 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
+                if(mDeviceList.size() == 1) {
+                    Removeview(1);
+                }else if(mDeviceList.size() ==2){
+                    Removeview(1);
+                    Removeview(2);
+                }
                 clearDevice();
                 break;
         }
@@ -619,7 +625,7 @@ public class MainActivity extends AppCompatActivity {
                 mac = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
                 String deviceMac = new String(mac);
                 if(deviceMac.equals(mDeviceList.get(0).getAddress()) ) {
-                    ctrolThread.WriteCharacterRspFlag = true;
+                    //ctrolThread.WriteCharacterRspFlag = true;
                     Log.d("写数据结果00000000","回应成功");
                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress())) {
                     ctrolThread1.WriteCharacterRspFlag = true;
