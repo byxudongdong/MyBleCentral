@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
@@ -78,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 8000;
+    private static final long SCAN_PERIOD = 4000;
 
     private TextView mDataField = null, numDevice = null;
 //    private EditText edtIP = null, edtPort = null;
@@ -110,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
     TextView update_info = null,update_info1 = null,update_info2 = null,update_info3 = null,update_info4 = null;
     CircleProgressBar mProgressBar =null,mProgressBar1 =null,mProgressBar2 =null,mProgressBar3 =null,mProgressBar4 =null;
 
+    Button Devicelist ;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -126,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
 
         mCustomProgressBar1 = (CircleProgressBar) findViewById(R.id.custom_progress1);
+        Devicelist = (Button) findViewById(R.id.devicelist);
 
         //listView = (ListView)findViewById(R.id.list_goods);
         mLeDeviceListAdapter = new LeDeviceListAdapter(); //创建适配器
@@ -277,6 +280,10 @@ public class MainActivity extends AppCompatActivity {
                     // TODO Auto-generated method stub
                     singleSelectedId = which;
                     Log.w("选择的项目：",String.valueOf(singleSelectedId));
+//                    String select_item = strDevice[which].toString();
+//                    Toast.makeText(MainActivity.this,
+//                            "选择了--->>" + select_item, Toast.LENGTH_SHORT)
+//                            .show();
 //                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
 //                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
                 }
@@ -311,6 +318,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     update1 = null;
                 }
+                numDevice.setText(deviceText + mDeviceList.size());
             }
         });
 
@@ -409,7 +417,7 @@ public class MainActivity extends AppCompatActivity {
 
         mDeviceList.clear();
         mDataField.setText("");
-        numDevice.setText(deviceText + "0");
+        numDevice.setText(deviceText + mDeviceList.size());
     }
 
     private void scanLeDevice(final boolean enable) {
@@ -433,9 +441,11 @@ public class MainActivity extends AppCompatActivity {
             }).start();
 
             mScanning = true;
+            //Devicelist.setClickable(false);
             mBluetoothAdapter.startLeScan(mLeScanCallback);
         } else {
             mScanning = false;
+            //Devicelist.setClickable(true);
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
         }
 
@@ -569,6 +579,9 @@ public class MainActivity extends AppCompatActivity {
                         {
                             //Removeview(ii+1);
                             Devicelayout.remove(ii);
+                            mDeviceList.remove(ii);
+                            numDevice.setText(deviceText + mDeviceList.size());
+                            Log.e("设备断开","去除列表项");
                         }
 
                     }
@@ -580,19 +593,21 @@ public class MainActivity extends AppCompatActivity {
                 if (!mDeviceContainer.isEmpty()) {
                     String strAddress = intent.getStringExtra("DEVICE_ADDRESS");
                     for(BluetoothDevice bluetoothDevice: mDeviceContainer){
-                        if(bluetoothDevice.getAddress().equals(strAddress)){
+                        if(bluetoothDevice.getAddress().equals(strAddress) && !mDeviceList.contains(bluetoothDevice)){
                             mDeviceList.add(bluetoothDevice);
-                            if(mDeviceList.size() == 1) {
+                            mBluetoothLeService.UpdateSpeed(strAddress); //重设速度
+                            //mBluetoothLeService.connectionQueue.add(bluetoothGatt);
+                            if (mDeviceList.size() == 1) {
                                 AddCtrolview(mDeviceList.get(mDeviceList.size() - 1).getName(), "1准备就绪！");
-                            }else if(mDeviceList.size() == 2)
-                            {
+                            } else if (mDeviceList.size() == 2) {
                                 AddCtrolview(mDeviceList.get(mDeviceList.size() - 1).getName(), "2准备就绪！");
                             }
                             //写数据的服务和characteristic
-                            mnotyGattService = mBluetoothLeService.getSupportedGattService( bluetoothDevice,"0000fff0-0000-1000-8000-00805f9b34fb" );
+                            mnotyGattService = mBluetoothLeService.getSupportedGattService(bluetoothDevice, "0000fff0-0000-1000-8000-00805f9b34fb");
                             writecharacteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"));
                             mnotyGattServiceList.add(mnotyGattService);
                             writecharacteristicList.add(writecharacteristic);
+
                         }
                     }
                 }
@@ -859,7 +874,7 @@ public class MainActivity extends AppCompatActivity {
                 while (!WriteCharacterRspFlag)
                 {
                     count++;
-                    if(count == 3) {
+                    if(count == 2) {
                         count = 0;
                         Log.i("发送短数据：", "发送4次失败");
                         break;

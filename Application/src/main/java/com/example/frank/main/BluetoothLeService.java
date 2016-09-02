@@ -48,7 +48,7 @@ public class BluetoothLeService extends Service {
     private BluetoothManager mBluetoothManager = null;
     private static BluetoothAdapter mBluetoothAdapter = null;
     //private static ArrayList<BluetoothGatt> mBluetoothGatt = new ArrayList<BluetoothGatt>();
-    private static ArrayList<BluetoothGatt> connectionQueue = new ArrayList<BluetoothGatt>();
+    public static ArrayList<BluetoothGatt> connectionQueue = new ArrayList<BluetoothGatt>();
 
     public final static String ACTION_GATT_CONNECTED =
             "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
@@ -298,22 +298,40 @@ public class BluetoothLeService extends Service {
         {
             if(btg.getDevice().getAddress().equals( address) )
             {
+                device.connectGatt(this, false, mGattCallback);
                 Log.w("已存在的设备","无需重复连接");
                 return false;
             }
         }
         bluetoothGatt = device.connectGatt(this, false, mGattCallback);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Log.w("重设蓝牙速度","fast!!!");
-            bluetoothGatt.requestConnectionPriority(1);//fast
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+////            Log.w("重设蓝牙速度","fast!!!");
+//            Boolean flag = bluetoothGatt.requestConnectionPriority(1);//fast
+//            Log.w("重设蓝牙速度","Setfast:"+String.valueOf(flag));
+//        }
         //mBluetoothGatt = bluetoothGatt;
         if(checkGatt(bluetoothGatt)){           //判断是否已经连接过，没连再连接
             connectionQueue.add(bluetoothGatt);
         }
         
-        Log.i(TAG, "Trying to create a new connection(建立新连接！！！).");
+        Log.i(TAG, "Trying to 建立新连接！！!");
         return true;
+    }
+
+    public Boolean UpdateSpeed(String address){
+        Boolean flag = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            for(BluetoothGatt btg:connectionQueue)
+            {
+                if(btg.getDevice().getAddress().equals( address) )
+                {
+                    flag = btg.requestConnectionPriority(1);//fast
+                    Log.w("重设蓝牙速度","Setfast:"+String.valueOf(flag));
+                }
+            }
+
+        }
+        return flag;
     }
 
     private boolean checkGatt(BluetoothGatt bluetoothGatt) {
@@ -343,6 +361,7 @@ public class BluetoothLeService extends Service {
         for(BluetoothGatt bluetoothGatt:connectionQueue){
             bluetoothGatt.disconnect();
         }
+        connectionQueue.clear();
     }
 
     public void disconnect(final String address) {
