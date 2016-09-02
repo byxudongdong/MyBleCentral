@@ -16,10 +16,13 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -42,8 +45,21 @@ import android.widget.Toast;
 
 import com.example.frank.main.bar.CircleProgressBar;
 
-import java.io.UnsupportedEncodingException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +69,8 @@ import java.util.UUID;
 
 //@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class MainActivity extends AppCompatActivity {
+    private SharedPreferences sp;
+
     private LeDeviceListAdapter mLeDeviceListAdapter;
     //private ListView listView;
     private List<Map<String, Object>> listItems;
@@ -99,6 +117,9 @@ public class MainActivity extends AppCompatActivity {
         deviceText = getString(R.string.device_number);
         iniUI();
         iniBle();
+
+        //获得实例对象
+        sp = this.getSharedPreferences("fileInfo", Context.MODE_WORLD_READABLE);
 
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         Log.d(TAG, "Try to bindService=" + bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE));
@@ -369,6 +390,12 @@ public class MainActivity extends AppCompatActivity {
                 }
                 clearDevice();
                 break;
+            case R.id.menu_files:
+                if(!menufiles ) {
+                    sendMessage(41);
+                    menufiles = true;
+                }
+            return true;
         }
         return true;
     }
@@ -1005,8 +1032,219 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(getApplicationContext(), "任务已经启动！", Toast.LENGTH_SHORT).show();
                     }
                     break;
+                case 41:
+                    new Thread(runnable,"GetFiles").start();
+                    break;
+                case 42:
+                    Toast.makeText(getApplicationContext(), "升级文件信息："+sp.getString("FileName", "不存在升级文件，请先选择升级文件！"), Toast.LENGTH_SHORT).show();
+                    break;
+                case 43:
+                    new Thread(httpdownload,"Download").start();
+                    break;
+                case 44:
+                    Toast.makeText(getApplicationContext(), "新升级文件准备就绪！", Toast.LENGTH_LONG).show();
+                    //updateState.setText( "升级文件信息："+sp.getString("FileName", "不存在升级文件，请先选择升级文件！") );
+                    break;
+                case 45:
+                    if(!list.isEmpty())
+                        showSingleChoiceButton();
+                    break;
+                case 46:
+                    Toast.makeText(getApplicationContext(), "请确认网络连接？", Toast.LENGTH_LONG).show();
             }
         }
     };
+
+    Runnable runnable=new Runnable() {
+        @Override
+        public void run() {
+            loads();
+            Looper.prepare();
+            sendMessage(45);
+        }
+    };
+
+    private String[] province = new String[] { "上海", "北京", "海南" };
+    // 单击事件对象的实例
+    private ButtonOnClick buttonOnClick;
+    // 在单选选项中显示 确定和取消按钮
+    //buttonOnClickg变量的数据类型是ButtonOnClick,一个单击事件类
+    private void showSingleChoiceButton()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("请选择升级文件版本");
+        builder.setSingleChoiceItems(province,province.length-1, buttonOnClick);
+        builder.setPositiveButton("确定", buttonOnClick);
+        builder.setNegativeButton("取消", buttonOnClick);
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    public int index; // 表示选项的索引
+    private class ButtonOnClick implements DialogInterface.OnClickListener
+    {
+
+        public ButtonOnClick(int listindex)
+        {
+            index = listindex;
+        }
+
+        @Override
+        public void onClick(DialogInterface dialog, int which)
+        {
+            // which表示单击的按钮索引，所有的选项索引都是大于0，按钮索引都是小于0的。
+            if (which >= 0)
+            {
+                //如果单击的是列表项，将当前列表项的索引保存在index中。
+                //如果想单击列表项后关闭对话框，可在此处调用dialog.cancel()
+                //或是用dialog.dismiss()方法。
+                index = which;
+            }
+            else
+            {
+                //用户单击的是【确定】按钮
+                if (which == DialogInterface.BUTTON_POSITIVE)
+                {
+                    //显示用户选择的是第几个列表项。
+                    Log.w("选择的文件是：",province[index]);
+                    final AlertDialog ad = new AlertDialog.Builder(
+                            MainActivity.this).setMessage(
+                            "你选择的文件是：" + index + ":" + province[index]).show();
+                    sendMessage(43);
+                    //五秒钟后自动关闭。
+                    Handler hander = new Handler();
+                    Runnable runnable = new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            ad.dismiss();
+                        }
+                    };
+                    hander.postDelayed(runnable, 2 * 1000);
+                    //TODO
+//                    downloadfile(province[index] );
+                }
+                //用户单击的是【取消】按钮
+                else if (which == DialogInterface.BUTTON_NEGATIVE)
+                {
+                    Toast.makeText(MainActivity.this, "你没有选择任何文件！",
+                            Toast.LENGTH_LONG).show();
+                }
+                menufiles =false;
+            }
+        }
+    }
+
+    Boolean menufiles =false;
+    Document doc;
+    String Url = "http://hycosoft.cc/w16.json";
+    List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+    protected void loads() {
+        String getdata = HttpUser.getJsonContent(Url);  //请求数据地址
+        if(getdata == ""){
+            sendMessage(46);
+            return;
+        }
+        //JSON对象 转 JSONModel对象
+        Root result = JavaBean.getPerson(getdata, Root.class);
+        list.clear();
+        for (int i=0;i<result.getKey().size();i++) {{
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("Name", result.getKey().get(i).getName());
+            map.put("Url", result.getKey().get(i).getUrl() );
+            list.add(map);
+        }
+        }
+        province = new String[result.getKey().size()];
+        for(int j=0;j<result.getKey().size();j++)
+        {
+            province[j] = list.get(j).get("Name");
+        }
+        buttonOnClick = new ButtonOnClick(province.length-1);
+    }
+
+    Runnable httpdownload =new Runnable() {
+        @Override
+        public void run() {
+            downloadfile( list.get(index).get("Url"));
+            Looper.prepare();
+        }
+    };
+    /**
+     *
+     * @Project: Android_MyDownload
+     * @Desciption: 读取任意文件，并将文件保存到手机SDCard
+     * @Author: LinYiSong
+     * @Date: 2011-3-25~2011-3-25
+     */
+    public void downloadfile(String  urlStr)
+    {
+        String path="Downloads";
+        String fileName="image_W16.hyc";
+        OutputStream output=null;
+        try {
+            /*
+             * 通过URL取得HttpURLConnection
+             * 要网络连接成功，需在AndroidMainfest.xml中进行权限配置
+             * <uses-permission android:name="android.permission.INTERNET" />
+             */
+            //urlStr = null;
+            URL url=new URL( urlStr);
+            HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+            //获得文件的长度
+            int contentLength = conn.getContentLength();
+            System.out.println("长度 :"+contentLength);
+
+            //取得inputStream，并将流中的信息写入SDCard
+            //String SDCard= Environment.getExternalStorageDirectory()+"";
+            String SDCard= Environment.getExternalStorageDirectory()+"";
+            String pathName=SDCard+"/"+path+"/"+fileName;//文件存储路径
+
+            File file=new File(pathName);
+            InputStream input=conn.getInputStream();
+            if(file.exists()){
+                System.out.println("exits");
+                file.delete();
+            }else{
+                String dir=SDCard+"/"+path;
+                new File(dir).mkdir();//新建文件夹
+                file.createNewFile();//新建文件
+                output=new FileOutputStream(file);
+                //读取大文件
+                byte[] buffer=new byte[1024];
+                //Log.w("文件请求大小",String.valueOf(input.available()));
+                int len;            //重要参数
+                while( (len = input.read(buffer))!=-1 ){
+                    output.write(buffer,0,len);
+                }
+                output.flush();
+                input.close();
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally{
+            try {
+                if(output != null) {
+                    output.close();
+                    System.out.println("success");
+                    menufiles = false;
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putString("FileName", province[index]);
+                    editor.commit();
+
+                    sendMessage(44);
+                }else {
+                    System.out.println("fail");
+                    sendMessage(43);
+                }
+            } catch (IOException e) {
+                System.out.println("fail");
+                e.printStackTrace();
+            }
+        }
+    }
 
 }
