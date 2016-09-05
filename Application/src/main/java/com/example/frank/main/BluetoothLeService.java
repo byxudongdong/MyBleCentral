@@ -130,7 +130,19 @@ public class BluetoothLeService extends Service {
                     Log.e(TAG, "Disconnected from GATT server.");
                     broadcastUpdate(intentAction, gatt.getDevice().getAddress());
                 }
-        	}
+        	}else if(status == 8){
+                if (newState == BluetoothProfile.STATE_DISCONNECTED){
+                    intentAction = ACTION_GATT_DISCONNECTED;
+                    listClose(gatt);
+                    Log.e(TAG, "Disconnected from GATT server.");
+                    broadcastUpdate(intentAction, gatt.getDevice().getAddress());
+                }else if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    intentAction = ACTION_GATT_CONNECTED;
+                    broadcastUpdate(intentAction);
+                    Log.i(TAG, "Connected to GATT server.");
+                    Log.i(TAG, "Attempting to start service discovery:" + gatt.discoverServices());
+                }
+            }
         }
 
 //        private void initServiceDiscovery(final BluetoothGatt gatt){
@@ -154,7 +166,7 @@ public class BluetoothLeService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-            	Log.i(TAG, "onServicesDiscovered received: " + status);  //0：成功
+            	Log.w(TAG, "onServicesDiscovered received: " + status);  //0：成功
             	findService(gatt);
             } else {
             	if(gatt.getDevice().getUuids() == null)

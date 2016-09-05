@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
 
         mCustomProgressBar1 = (CircleProgressBar) findViewById(R.id.custom_progress1);
+        mCustomProgressBar1.setVisibility(View.GONE);
         Devicelist = (Button) findViewById(R.id.devicelist);
 
         //listView = (ListView)findViewById(R.id.list_goods);
@@ -173,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         myLayout = (LinearLayout) findViewById(R.id.device_opTest);
+        AddCtrolviewAll();
     }
 
     public int singleSelectedId1;
@@ -317,6 +319,15 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                     update1 = null;
+                }else if (singleSelectedId == 2){
+                    Removeview(3);
+                    ctrolThread2.updateFlag = false;
+                    try {
+                        Thread.currentThread().sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    update2 = null;
                 }
                 numDevice.setText(deviceText + mDeviceList.size());
             }
@@ -329,7 +340,7 @@ public class MainActivity extends AppCompatActivity {
                 //自定义功能
                 byte[] bytes = UpdateOpt.wakeupData;        //写入发送数据
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 } catch (InterruptedException e) {
                     Log.i("等待延时：", "wait...");
                 }
@@ -357,6 +368,11 @@ public class MainActivity extends AppCompatActivity {
                     ctrolThread1.writeBleDevice(mDeviceList.get(singleSelectedId));
                     ctrolThread1.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
                     sendMessage(2);
+                }else if (singleSelectedId ==2){
+                    ctrolThread2.getBarProgress();
+                    ctrolThread2.writeBleDevice(mDeviceList.get(singleSelectedId));
+                    ctrolThread2.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+                    sendMessage(3);
                 }
             }
         });
@@ -390,11 +406,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
-                if(mDeviceList.size() == 1) {
-                    Removeview(1);
-                }else if(mDeviceList.size() ==2){
+                if(mDeviceList.size() >= 1) {
                     Removeview(1);
                     Removeview(2);
+                    Removeview(3);
                 }
                 clearDevice();
                 break;
@@ -597,10 +612,12 @@ public class MainActivity extends AppCompatActivity {
                             mDeviceList.add(bluetoothDevice);
                             mBluetoothLeService.UpdateSpeed(strAddress); //重设速度
                             //mBluetoothLeService.connectionQueue.add(bluetoothGatt);
-                            if (mDeviceList.size() == 1) {
-                                AddCtrolview(mDeviceList.get(mDeviceList.size() - 1).getName(), "1准备就绪！");
-                            } else if (mDeviceList.size() == 2) {
-                                AddCtrolview(mDeviceList.get(mDeviceList.size() - 1).getName(), "2准备就绪！");
+                            if(mDeviceList.size() == 1) {
+                                AddCtrolview(1, mDeviceList.get(mDeviceList.size() - 1).getName(), "1准备就绪！");
+                            }else if (mDeviceList.size() == 2) {
+                                AddCtrolview(2 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "2准备就绪！");
+                            }else if (mDeviceList.size() == 3) {
+                                AddCtrolview(3 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "3准备就绪！");
                             }
                             //写数据的服务和characteristic
                             mnotyGattService = mBluetoothLeService.getSupportedGattService(bluetoothDevice, "0000fff0-0000-1000-8000-00805f9b34fb");
@@ -643,6 +660,8 @@ public class MainActivity extends AppCompatActivity {
                                     ctrolThread.updateReceive_respons(devicedata, devicedata.length - 4);
                                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress()) ){
                                     ctrolThread1.updateReceive_respons(devicedata, devicedata.length - 4);
+                                }else if(deviceMac.equals(mDeviceList.get(2).getAddress()) ){
+                                    ctrolThread2.updateReceive_respons(devicedata, devicedata.length - 4);
                                 }
                             }
                         }else if(devicedata[0] == (byte)0x40) {
@@ -672,6 +691,9 @@ public class MainActivity extends AppCompatActivity {
                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress())) {
                     ctrolThread1.WriteCharacterRspFlag = true;
                     Log.d("写数据结果11111111","回应成功");
+                }else if(deviceMac.equals(mDeviceList.get(2).getAddress())) {
+                    ctrolThread2.WriteCharacterRspFlag = true;
+                    Log.d("写数据结果22222222","回应成功");
                 }
                 //Log.d("写数据结果","回应成功");
 
@@ -682,32 +704,45 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout myLayout ; // myLayout是我这个activity的界面的root layout
     View hiddenView,hiddenView1,hiddenView2,hiddenView3,hiddenView4 ; //hiddenView是隐藏的View，
     ArrayList<View> Devicelayout = new ArrayList<View>();
-    public void AddCtrolview(String name,String State )
+
+    public void AddCtrolviewAll(){
+        hiddenView = getLayoutInflater().inflate(R.layout.device, myLayout, false);
+        hiddenView1 = getLayoutInflater().inflate(R.layout.device1, myLayout, false);
+        hiddenView2 = getLayoutInflater().inflate(R.layout.device2, myLayout, false);
+
+        //从hidden_view.xml文件导入
+        myLayout.addView(hiddenView);
+        Devicelayout.add(hiddenView);
+        //从hidden_view1.xml文件导入
+        myLayout.addView(hiddenView1);
+        Devicelayout.add(hiddenView1);
+        //从hidden_view2.xml文件导入
+        myLayout.addView(hiddenView2);
+        Devicelayout.add(hiddenView2);
+
+        updatename = (TextView) findViewById(R.id.update_name);
+        update_info = (TextView) findViewById(R.id.update_info);
+        mProgressBar = (CircleProgressBar) findViewById(R.id.update_progress);
+        updatename1 = (TextView) findViewById(R.id.update_name1);
+        update_info1 = (TextView) findViewById(R.id.update_info1);
+        mProgressBar1 = (CircleProgressBar) findViewById(R.id.update_progress1);
+        updatename2 = (TextView) findViewById(R.id.update_name2);
+        update_info2 = (TextView) findViewById(R.id.update_info2);
+        mProgressBar2 = (CircleProgressBar) findViewById(R.id.update_progress2);
+
+    }
+
+    public void AddCtrolview(int index, String name,String State )
     {
-        if(Devicelayout.size() == 0) {
-            hiddenView = getLayoutInflater().inflate(R.layout.device, myLayout, false);
-            //从hidden_view.xml文件导入
-            myLayout.addView(hiddenView);
-            Devicelayout.add(hiddenView);
-
-            updatename = (TextView) findViewById(R.id.update_name);
-            update_info = (TextView) findViewById(R.id.update_info);
-            mProgressBar = (CircleProgressBar) findViewById(R.id.update_progress);
-
+        if(index == 1) {
             updatename.setText(name);
             update_info.setText(State);
-        }else if(Devicelayout.size() == 1){
-            hiddenView1 = getLayoutInflater().inflate(R.layout.device1, myLayout, false);
-            //从hidden_view.xml文件导入
-            myLayout.addView(hiddenView1);
-            Devicelayout.add(hiddenView1);
-
-            updatename1 = (TextView) findViewById(R.id.update_name1);
-            update_info1 = (TextView) findViewById(R.id.update_info1);
-            mProgressBar1 = (CircleProgressBar) findViewById(R.id.update_progress1);
-
+        }else if(index == 2){
             updatename1.setText(name);
             update_info1.setText(State);
+        }else if(index == 3){
+            updatename2.setText(name);
+            update_info2.setText(State);
         }
 
     }
@@ -716,9 +751,14 @@ public class MainActivity extends AppCompatActivity {
     {
         //从hidden_view.xml文件导入
         if(which ==1) {
-            myLayout.removeView(hiddenView);
+            updatename.setText("Device name:");
+            update_info.setText("未连接设备!");
         }else if (which ==2){
-            myLayout.removeView(hiddenView1);
+            updatename1.setText("Device name:");
+            update_info1.setText("未连接设备!");
+        }else if (which ==3){
+            updatename2.setText("Device name:");
+            update_info2.setText("未连接设备!");
         }
     }
 
@@ -952,9 +992,9 @@ public class MainActivity extends AppCompatActivity {
 //                mLineProgressBar.setProgress(progress);
 //                mSolidProgressBar.setProgress(progress);
                 mCustomProgressBar1.setProgress(progress);
-                if(Devicelayout.size() == 1) {
+                if(mDeviceList.size() == 1) {
                     mProgressBar.setProgress(ctrolThread.getBarProgress());
-                }else if(Devicelayout.size() == 2){
+                }else if(mDeviceList.size() == 2){
                     mProgressBar.setProgress(ctrolThread.getBarProgress());
                     mProgressBar1.setProgress(ctrolThread1.getBarProgress());
                 }
@@ -1043,6 +1083,20 @@ public class MainActivity extends AppCompatActivity {
                     if(!ctrolThread1.updateFlag){
                         update1 = new Thread(ctrolThread1.sendData, "Update1");
                         update1.start();
+                    }else {
+                        Toast.makeText(getApplicationContext(), "任务已经启动！", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case 3:
+                    ctrolThread2.updateFlag = false;
+                    try {
+                        Thread.currentThread().sleep(300);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if(!ctrolThread2.updateFlag){
+                        update2 = new Thread(ctrolThread2.sendData, "Update2");
+                        update2.start();
                     }else {
                         Toast.makeText(getApplicationContext(), "任务已经启动！", Toast.LENGTH_SHORT).show();
                     }
