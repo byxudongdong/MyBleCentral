@@ -304,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId], Toast.LENGTH_SHORT).show();
                 mBluetoothLeService.disconnect(strMAC[singleSelectedId]);      //断开设备———————————————
                 if(singleSelectedId ==0) {
-                    Removeview(1);
+                    //Removeview(1);
                     ctrolThread.updateFlag = false;
                     try {
                         Thread.currentThread().sleep(100);
@@ -313,7 +313,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     update = null;
                 }else if (singleSelectedId == 1){
-                    Removeview(2);
+                    //Removeview(2);
                     ctrolThread1.updateFlag = false;
                     try {
                         Thread.currentThread().sleep(100);
@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     update1 = null;
                 }else if (singleSelectedId == 2){
-                    Removeview(3);
+                    //Removeview(3);
                     ctrolThread2.updateFlag = false;
                     try {
                         Thread.currentThread().sleep(100);
@@ -439,6 +439,7 @@ public class MainActivity extends AppCompatActivity {
 
     //private ArrayList<BluetoothDevice> mLeDevices;
     private void scanLeDevice(final boolean enable) {
+        sendMessage(51);
         if (enable) {
             // Stops scanning after a pre-defined scan period.
             new Thread(new Runnable() {
@@ -452,6 +453,7 @@ public class MainActivity extends AppCompatActivity {
                             mScanning = false;
                             mBluetoothAdapter.stopLeScan(mLeScanCallback);
                             invalidateOptionsMenu();
+                            sendMessage(52);
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -608,7 +610,7 @@ public class MainActivity extends AppCompatActivity {
                     for(int ii=0;ii<mDeviceList.size();ii++){
                         if(mDeviceList.get(ii).getAddress().equals(strAddress))
                         {
-                            //Removeview(ii+1);
+                            Removeview(ii+1);
                             //Devicelayout.remove(ii);
                             mDeviceList.remove(ii);
                             numDevice.setText(deviceText + mDeviceList.size());
@@ -763,18 +765,54 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public String name1,info1,name2,info2;
     public void Removeview(int which)
     {
         //从hidden_view.xml文件导入
         if(which ==1) {
-            updatename.setText("Device name:");
-            update_info.setText("未连接设备!");
+            if(mDeviceList.size() == 1) {
+                updatename.setText("设备名称:");
+                update_info.setText("未连接设备!");
+                //Log.e("跑了没有1","跑了没有1");
+            }else if(mDeviceList.size() == 2) {
+                name1 = updatename1.getText().toString();
+                info1 = update_info1.getText().toString();
+                updatename.setText(name1);
+                update_info.setText(info1);
+                updatename1.setText("设备名称:");
+                update_info1.setText("未连接设备!");
+                //Log.e("跑了没有1","跑了没有2");
+            }else if(mDeviceList.size() == 3){
+                name1 = updatename1.getText().toString();
+                info1 = update_info1.getText().toString();
+                name2 = updatename2.getText().toString();
+                info2 = update_info2.getText().toString();
+                updatename.setText(name1);
+                update_info.setText(info1);
+                updatename1.setText(name2);
+                update_info1.setText(info2);
+                updatename2.setText("设备名称:");
+                update_info2.setText("未连接设备!");
+                //Log.e("跑了没有1","跑了没有3");
+            }
         }else if (which ==2){
-            updatename1.setText("Device name:");
-            update_info1.setText("未连接设备!");
+            if(mDeviceList.size() == 3) {
+                name2 = updatename2.getText().toString();
+                info2 = update_info2.getText().toString();
+                updatename1.setText(name2);
+                update_info1.setText(info2);
+                updatename2.setText("设备名称:");
+                update_info2.setText("未连接设备!");
+                //Log.e("跑了没有2","跑了没有3");
+            }else if(mDeviceList.size() == 2){
+                updatename1.setText("设备名称:");
+                update_info1.setText("未连接设备!");
+                //Log.e("跑了没有2","跑了没有2");
+            }
         }else if (which ==3){
-            updatename2.setText("Device name:");
+            updatename2.setText("设备名称:");
             update_info2.setText("未连接设备!");
+            //Log.e("跑了没有3","跑了没有3");
         }
     }
 
@@ -1172,7 +1210,14 @@ public class MainActivity extends AppCompatActivity {
                 case 50:
                     mLeDeviceListAdapter.notifyDataSetChanged();
                     break;
-
+                case 51:
+                    Devicelist.setClickable(false);
+                    Devicelist.setText("正在扫描...");
+                    break;
+                case 52:
+                    Devicelist.setClickable(true);
+                    Devicelist.setText("可用设备");
+                    break;
             }
         }
     };
