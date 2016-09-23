@@ -283,31 +283,39 @@ public class CtrolThread {
                 bool = WriteCharacteristic.setValue(UpdateOpt.subBytes(SendData, i, 20));
                 //PrintLog.printHexString("Gatt写长数据",WriteCharacteristic.getValue());
                 WriteCharacterRspFlag = false;
-                writeDataresult = false;
-                Log.d("写20个字节00000","写调用");
-                while ( !BluetoothLeService.writeCharacteristic(bluetoothDevice, WriteCharacteristic) ) {
-                    //writeDataresult = BluetoothLeService.writeCharacteristic(bluetoothDevice, WriteCharacteristic);//BluetoothLeService.writeCharacteristic(WriteCharacteristic);
+                Log.d("写20个字节0000","写调用");
+                BluetoothLeService.writeCharacteristic( bluetoothDevice, WriteCharacteristic);//BluetoothLeService.writeCharacteristic(WriteCharacteristic);
+
+                try {
+                    Thread.currentThread().sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                long newtime = System.currentTimeMillis();  //開始時間
+                while (!WriteCharacterRspFlag)
+                {
+//                    count++;
+//                    if(count == 5) {
+//                        count = 0;
+//                        Log.i("发送数据：", "分段发送5次失败");
+//                        break;
+//                    }
+                    if(System.currentTimeMillis() - newtime > 20){
+                        Log.d("写数据等待回应","失败1111111？");
+                        newtime = System.currentTimeMillis();  //開始時間
+                        //break;
+                    }
+
+                    //BluetoothLeService.writeCharacteristic(WriteCharacteristic);
                     try {
-                        Thread.currentThread().sleep(10);
+                        Thread.currentThread().sleep(9);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
-//                long newtime = System.currentTimeMillis();  //開始時間
-//                while (!WriteCharacterRspFlag)
-//                {
-//                    if(System.currentTimeMillis() - newtime > 20){
-//                        Log.d("写数据等待回应","失败00000？");
-//                        //newtime = System.currentTimeMillis();  //開始時間
-//                        break;
-//                    }
-//                    try {
-//                        Thread.currentThread().sleep(5);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
                 //Log.i("回应标志：", WriteCharacterRspFlag.toString());
+                WriteCharacterRspFlag = false;
             }
             bool = true;
         }else {

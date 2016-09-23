@@ -60,6 +60,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -146,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
 //                Toast.makeText(getApplicationContext(), text1.getText().toString(), Toast.LENGTH_SHORT).show();
 //            }
 //        });
-
+        mDevRssiValues = new HashMap<String, Integer>();
     }
 
     @Override
@@ -187,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
             strMAC = new String[mDeviceContainer.size()];
             int i = 0;
             for(BluetoothDevice device: mDeviceContainer){
-                strDevice[i] = device.getName() ;
+                strDevice[i] = device.getName() +":"+ String.valueOf(mDevRssiValues.get(device.getAddress()) + "dbm");
                 strMAC[i] = device.getAddress();
                 i++;
             }
@@ -435,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
         numDevice.setText(deviceText + mDeviceList.size());
     }
 
+    //private ArrayList<BluetoothDevice> mLeDevices;
     private void scanLeDevice(final boolean enable) {
         if (enable) {
             // Stops scanning after a pre-defined scan period.
@@ -442,7 +445,8 @@ public class MainActivity extends AppCompatActivity {
                 public void run() {
                     try {
                         Thread.sleep(SCAN_PERIOD);
-
+                        Collections.sort(mDeviceContainer, new ComparatorValues());
+                        sendMessage(50);
                         if(mScanning)
                         {
                             mScanning = false;
@@ -487,19 +491,31 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (!mDeviceContainer.isEmpty()) {
-                                if(!isEquals(device)){          //不是第一个连接
-                                    Log.i("不是第一个连接","这个没连，连上先");
-                                    connectBle(device);
-                                    mLeDeviceListAdapter.addDevice(device);
-                                    mLeDeviceListAdapter.notifyDataSetChanged();
-                                }
-                            }else{                              //第一个连接
-                                Log.i("未连接任何蓝牙设备","连上先");
-                                connectBle(device);
+//                            if (!mDeviceContainer.isEmpty()) {
+//                                if(!isEquals(device)){          //不是第一个连接
+//                                    Log.i("不是第一个连接","这个没连，连上先");
+//                                    connectBle(device);
+//                                    mLeDeviceListAdapter.addDevice(device);
+//                                    mLeDeviceListAdapter.notifyDataSetChanged();
+//                                }
+//                            }else{                              //第一个连接
+//                                Log.i("未连接任何蓝牙设备","连上先");
+//                                connectBle(device);
+//                                mLeDeviceListAdapter.addDevice(device);
+//                                mLeDeviceListAdapter.notifyDataSetChanged();
+//                            }
+                            if(rssi>-55 && scanRecord[11] ==(byte)0xF0 && scanRecord[12] ==(byte)0xFF
+                                    && (scanRecord[13] ==(byte)0x07 || scanRecord[13] ==(byte)0x0E) ) {
                                 mLeDeviceListAdapter.addDevice(device);
-                                mLeDeviceListAdapter.notifyDataSetChanged();
+                                if(!mDeviceContainer.contains(device))
+                                    mDeviceContainer.add(device);
+                                if (mDevRssiValues.get(device.getAddress()) != null) {
+                                    mDevRssiValues.put(device.getAddress(), (mDevRssiValues.get(device.getAddress()) + rssi) / 2);
+                                } else {
+                                    mDevRssiValues.put(device.getAddress(), rssi);
+                                }
                             }
+                            mLeDeviceListAdapter.notifyDataSetChanged();
                         }
                     });
                 }
@@ -593,7 +609,7 @@ public class MainActivity extends AppCompatActivity {
                         if(mDeviceList.get(ii).getAddress().equals(strAddress))
                         {
                             //Removeview(ii+1);
-                            Devicelayout.remove(ii);
+                            //Devicelayout.remove(ii);
                             mDeviceList.remove(ii);
                             numDevice.setText(deviceText + mDeviceList.size());
                             Log.e("设备断开","去除列表项");
@@ -686,7 +702,7 @@ public class MainActivity extends AppCompatActivity {
                 mac = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
                 String deviceMac = new String(mac);
                 if(deviceMac.equals(mDeviceList.get(0).getAddress()) ) {
-                    //ctrolThread.WriteCharacterRspFlag = true;
+                    ctrolThread.WriteCharacterRspFlag = true;
                     Log.d("写数据结果00000000","回应成功");
                 }else if(deviceMac.equals(mDeviceList.get(1).getAddress())) {
                     ctrolThread1.WriteCharacterRspFlag = true;
@@ -786,7 +802,10 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         unregisterReceiver(mGattUpdateReceiver);
         unbindService(mServiceConnection);
-
+        ctrolThread.updateFlag = false;
+        ctrolThread1.updateFlag = false;
+        ctrolThread2.updateFlag = false;
+        ctrolThread3.updateFlag = false;
         if(mBluetoothLeService != null)
         {
             mBluetoothLeService.close();
@@ -802,9 +821,31 @@ public class MainActivity extends AppCompatActivity {
         TextView deviceDb;
     }
 
+    private Map<String, Integer> mDevRssiValues;
+    private ArrayList<BluetoothDevice> mLeDevices;
+    public final class ComparatorValues implements Comparator<BluetoothDevice> {
+
+        @Override
+        public int compare(BluetoothDevice object1, BluetoothDevice object2) {
+            int m1=mDevRssiValues.get( object1.getAddress() );
+            int m2=mDevRssiValues.get( object2.getAddress() );
+            int result=0;
+            if(m1>m2)
+            {
+                result=-1;
+            }
+            if(m1<m2)
+            {
+                result=1;
+            }
+            return result;
+        }
+
+    }
+
     // Adapter for holding devices found through scanning.
     private class LeDeviceListAdapter extends BaseAdapter {
-        private ArrayList<BluetoothDevice> mLeDevices;
+
         private LayoutInflater mInflator;
 
         public LeDeviceListAdapter() {
@@ -978,7 +1019,10 @@ public class MainActivity extends AppCompatActivity {
         }
         temp[len+4] = (byte)sum;
         //Log.i("调用特征值写：", "wait...");
-        WriteComm(bluetoothDevice ,WriteCharacteristic, temp, len+6);
+        byte[] newtemp = new byte[len+7];
+        newtemp[0] = 0x00;
+        System.arraycopy(temp,0,newtemp,1,len+6);
+        WriteComm(bluetoothDevice ,WriteCharacteristic, newtemp, len+7);
 
         return true;
     }
@@ -997,6 +1041,10 @@ public class MainActivity extends AppCompatActivity {
                 }else if(mDeviceList.size() == 2){
                     mProgressBar.setProgress(ctrolThread.getBarProgress());
                     mProgressBar1.setProgress(ctrolThread1.getBarProgress());
+                }else if(mDeviceList.size() == 3){
+                    mProgressBar.setProgress(ctrolThread.getBarProgress());
+                    mProgressBar1.setProgress(ctrolThread1.getBarProgress());
+                    mProgressBar2.setProgress(ctrolThread2.getBarProgress());
                 }
             }
         });
@@ -1120,6 +1168,11 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case 46:
                     Toast.makeText(getApplicationContext(), "请确认网络连接？", Toast.LENGTH_LONG).show();
+                    break;
+                case 50:
+                    mLeDeviceListAdapter.notifyDataSetChanged();
+                    break;
+
             }
         }
     };
@@ -1249,6 +1302,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void downloadfile(String  urlStr)
     {
+        int contentLength = 0;
         String path="Downloads";
         String fileName="image_W16.hyc";
         OutputStream output=null;
@@ -1262,7 +1316,7 @@ public class MainActivity extends AppCompatActivity {
             URL url=new URL( urlStr);
             HttpURLConnection conn=(HttpURLConnection)url.openConnection();
             //获得文件的长度
-            int contentLength = conn.getContentLength();
+            contentLength = conn.getContentLength();
             System.out.println("长度 :"+contentLength);
 
             //取得inputStream，并将流中的信息写入SDCard
@@ -1303,14 +1357,18 @@ public class MainActivity extends AppCompatActivity {
                     SharedPreferences.Editor editor = sp.edit();
                     editor.putString("FileName", province[index]);
                     editor.commit();
+                    if(contentLength>50000){
+                        sendMessage(44);
+                    }else{
+                        sendMessage(46);
+                    }
 
-                    sendMessage(44);
                 }else {
-                    System.out.println("fail");
+                    System.out.println("fail000");
                     sendMessage(43);
                 }
             } catch (IOException e) {
-                System.out.println("fail");
+                System.out.println("fail111");
                 e.printStackTrace();
             }
         }
