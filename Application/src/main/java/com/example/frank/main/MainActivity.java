@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 4000;
+    private static final long SCAN_PERIOD = 8000;
 
     private TextView mDataField = null, numDevice = null;
 //    private EditText edtIP = null, edtPort = null;
@@ -93,8 +93,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter = null;
     private boolean mScanning;
     private String deviceText = null;
-    private LinkedList<BluetoothDevice> mDeviceContainer = new LinkedList<BluetoothDevice>();  //所有搜索到的设备
-    private LinkedList<BluetoothDevice> mDeviceConnectable = new LinkedList<BluetoothDevice>();  //可连接的设备
+    private LinkedList<BluetoothDevice> mDeviceContainer = new LinkedList<BluetoothDevice>();  //可连接的设备
+    private LinkedList<BluetoothDevice> mDeviceConnectable = new LinkedList<BluetoothDevice>();  //所有搜索到的设备
     private ArrayList<BluetoothDevice> mDeviceList = new ArrayList<BluetoothDevice>();  //已连接的设备
 
     CtrolThread ctrolThread = new CtrolThread();
@@ -114,11 +114,13 @@ public class MainActivity extends AppCompatActivity {
     CircleProgressBar mProgressBar =null,mProgressBar1 =null,mProgressBar2 =null,mProgressBar3 =null,mProgressBar4 =null;
 
     Button Devicelist ;
+
+    Button update_start,update_version,update_start1,update_version1,update_start2,update_version2;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gatt_services);
-        deviceText = getString(R.string.device_number);
+        deviceText = "可连接/已连接:";//getString(R.string.device_number);
         iniUI();
         iniBle();
 
@@ -164,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
         // Sets up UI references.
         mDataField = (TextView) findViewById(R.id.data_value);
         numDevice = (TextView) findViewById(R.id.device_number);
-        numDevice.setText(deviceText + "0");
+        numDevice.setText(deviceText + mDeviceContainer.size() + "/" + "0");
         svResult = (ScrollView) this.findViewById(R.id.svResult);
 
         btnDevice = (Button) this.findViewById(R.id.getDevice);
@@ -177,6 +179,20 @@ public class MainActivity extends AppCompatActivity {
 
         myLayout = (LinearLayout) findViewById(R.id.device_opTest);
         AddCtrolviewAll();
+        update_start = (Button) findViewById(R.id.update_start);
+        update_version=(Button) findViewById(R.id.update_version);
+        update_start1 = (Button) findViewById(R.id.update_start1);
+        update_version1=(Button) findViewById(R.id.update_version1);
+        update_start2 = (Button) findViewById(R.id.update_start2);
+        update_version2=(Button) findViewById(R.id.update_version2);
+
+        update_start.setVisibility(View.INVISIBLE);
+        update_version.setVisibility(View.INVISIBLE);
+        update_start1.setVisibility(View.INVISIBLE);
+        update_version1.setVisibility(View.INVISIBLE);
+        update_start2.setVisibility(View.INVISIBLE);
+        update_version2.setVisibility(View.INVISIBLE);
+
     }
 
     public int singleSelectedId1;
@@ -184,16 +200,22 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setIcon(R.drawable.logo);
         builder.setTitle("可用设备：");
-        if (!mDeviceContainer.isEmpty()) {
-            strDevice = new String[mDeviceContainer.size()];
-            strMAC = new String[mDeviceContainer.size()];
-            int i = 0;
-            for(BluetoothDevice device: mDeviceContainer){
-                strDevice[i] = device.getName() +":"+ String.valueOf(mDevRssiValues.get(device.getAddress()) + "dbm");
-                strMAC[i] = device.getAddress();
-                i++;
+        LinkedList<BluetoothDevice> mDeviceContainercopy = new LinkedList<BluetoothDevice>();
+        for(BluetoothDevice device: mDeviceContainer) {
+            if(!mDeviceList.contains(device)) {
+                mDeviceContainercopy.add(device);
             }
-            builder.setSingleChoiceItems(strDevice, -1,new DialogInterface.OnClickListener() {
+        }
+        if (!mDeviceContainercopy.isEmpty()) {
+            strDevice = new String[mDeviceContainercopy.size()];
+            strMAC = new String[mDeviceContainercopy.size()];
+            int i = 0;
+            for(BluetoothDevice device: mDeviceContainercopy){
+                    strDevice[i] = device.getName() + ":" + String.valueOf(mDevRssiValues.get(device.getAddress()) + "dbm");
+                    strMAC[i] = device.getAddress();
+                    i++;
+            }
+            builder.setSingleChoiceItems(strDevice, 0,new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     // TODO Auto-generated method stub
@@ -201,8 +223,8 @@ public class MainActivity extends AppCompatActivity {
 //                    Toast.makeText(MainActivity.this, "您选中了："+strDevice[which], Toast.LENGTH_SHORT).show();
 //                    mBluetoothLeService.disconnect(strMAC[which]);      //断开设备———————————————
                 }
-    });
-        }else{
+            });
+        } else {
             String[] str = new String[1];
             str[0] = "未找到任何设备！";
             builder.setItems(str, null);
@@ -278,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
                 strMAC[i] = device.getAddress();
                 i++;
             }
-            builder.setSingleChoiceItems(strDevice, -1,new DialogInterface.OnClickListener() {
+            builder.setSingleChoiceItems(strDevice, 0,new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     // TODO Auto-generated method stub
@@ -331,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     update2 = null;
                 }
-                numDevice.setText(deviceText + mDeviceList.size());
+                numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
             }
         });
 
@@ -395,6 +417,7 @@ public class MainActivity extends AppCompatActivity {
                 mLeDeviceListAdapter.clear();
                 //clearDevice();
                 mDeviceContainer.clear();
+                mDeviceConnectable.clear();
                 new Thread(new Runnable() {
                     public void run() {
                         try {
@@ -428,30 +451,36 @@ public class MainActivity extends AppCompatActivity {
     private void clearDevice() {
         mBluetoothLeService.disconnect();
         mDeviceContainer.clear();
+        mDeviceConnectable.clear();
         //写数据的服务和characteristic
         mnotyGattServiceList.clear();
         writecharacteristicList.clear();
 
         mDeviceList.clear();
         mDataField.setText("");
-        numDevice.setText(deviceText + mDeviceList.size());
+        numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
     }
 
     //private ArrayList<BluetoothDevice> mLeDevices;
     private void scanLeDevice(final boolean enable) {
-        sendMessage(51);
         if (enable) {
+            sendMessage(51);
             // Stops scanning after a pre-defined scan period.
             new Thread(new Runnable() {
                 public void run() {
                     try {
                         Thread.sleep(SCAN_PERIOD);
-                        Collections.sort(mDeviceContainer, new ComparatorValues());
-                        sendMessage(50);
                         if(mScanning)
                         {
                             mScanning = false;
                             mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                            Collections.sort(mDeviceContainer, new ComparatorValues());
+                            Collections.sort(mDeviceConnectable, new ComparatorValues());
+
+                            if(mDeviceContainer.isEmpty() ){
+                                mDeviceContainer.add(mDeviceConnectable.get(0));
+                            }
+                            sendMessage(50);
                             invalidateOptionsMenu();
                             sendMessage(52);
                         }
@@ -506,11 +535,20 @@ public class MainActivity extends AppCompatActivity {
 //                                mLeDeviceListAdapter.addDevice(device);
 //                                mLeDeviceListAdapter.notifyDataSetChanged();
 //                            }
-                            if(rssi>-55 && scanRecord[11] ==(byte)0xF0 && scanRecord[12] ==(byte)0xFF
+                            if(mScanning && rssi>-55 && scanRecord[11] ==(byte)0xF0 && scanRecord[12] ==(byte)0xFF
                                     && (scanRecord[13] ==(byte)0x07 || scanRecord[13] ==(byte)0x0E) ) {
                                 mLeDeviceListAdapter.addDevice(device);
-                                if(!mDeviceContainer.contains(device))
+                                if(!mDeviceContainer.contains(device)) {
                                     mDeviceContainer.add(device);
+                                    numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
+                                }
+
+                            }
+                            if(mScanning && rssi>-70 && scanRecord[11] ==(byte)0xF0 && scanRecord[12] ==(byte)0xFF
+                                    && (scanRecord[13] ==(byte)0x07 || scanRecord[13] ==(byte)0x0E)){
+                                if(!mDeviceConnectable.contains(device))
+                                    mDeviceConnectable.add(device);
+
                                 if (mDevRssiValues.get(device.getAddress()) != null) {
                                     mDevRssiValues.put(device.getAddress(), (mDevRssiValues.get(device.getAddress()) + rssi) / 2);
                                 } else {
@@ -613,7 +651,8 @@ public class MainActivity extends AppCompatActivity {
                             Removeview(ii+1);
                             //Devicelayout.remove(ii);
                             mDeviceList.remove(ii);
-                            numDevice.setText(deviceText + mDeviceList.size());
+                            writecharacteristicList.remove(ii);
+                            numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
                             Log.e("设备断开","去除列表项");
                         }
 
@@ -631,11 +670,17 @@ public class MainActivity extends AppCompatActivity {
                             mBluetoothLeService.UpdateSpeed(strAddress); //重设速度
                             //mBluetoothLeService.connectionQueue.add(bluetoothGatt);
                             if(mDeviceList.size() == 1) {
-                                AddCtrolview(1, mDeviceList.get(mDeviceList.size() - 1).getName(), "1准备就绪！");
+                                AddCtrolview(1, mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
+                                update_start.setVisibility(View.VISIBLE);
+                                update_version.setVisibility(View.VISIBLE);
                             }else if (mDeviceList.size() == 2) {
-                                AddCtrolview(2 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "2准备就绪！");
+                                AddCtrolview(2 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
+                                update_start1.setVisibility(View.VISIBLE);
+                                update_version1.setVisibility(View.VISIBLE);
                             }else if (mDeviceList.size() == 3) {
-                                AddCtrolview(3 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "3准备就绪！");
+                                AddCtrolview(3 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
+                                update_start2.setVisibility(View.VISIBLE);
+                                update_version2.setVisibility(View.VISIBLE);
                             }
                             //写数据的服务和characteristic
                             mnotyGattService = mBluetoothLeService.getSupportedGattService(bluetoothDevice, "0000fff0-0000-1000-8000-00805f9b34fb");
@@ -646,7 +691,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }
-                numDevice.setText(deviceText + mDeviceList.size());
+                numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
 //                Toast.makeText(MainActivity.this, "Discover GATT Services", Toast.LENGTH_SHORT).show();
                 Log.w(TAG, "Discover GATT Services");
                 invalidateOptionsMenu();
@@ -772,7 +817,9 @@ public class MainActivity extends AppCompatActivity {
         if(which ==1) {
             if(mDeviceList.size() == 1) {
                 updatename.setText("设备名称:");
-                update_info.setText("未连接设备!");
+                update_info.setText("未连接!");
+                update_start.setVisibility(View.INVISIBLE);
+                update_version.setVisibility(View.INVISIBLE);
                 //Log.e("跑了没有1","跑了没有1");
             }else if(mDeviceList.size() == 2) {
                 name1 = updatename1.getText().toString();
@@ -780,7 +827,9 @@ public class MainActivity extends AppCompatActivity {
                 updatename.setText(name1);
                 update_info.setText(info1);
                 updatename1.setText("设备名称:");
-                update_info1.setText("未连接设备!");
+                update_info1.setText("未连接!");
+                update_start1.setVisibility(View.INVISIBLE);
+                update_version1.setVisibility(View.INVISIBLE);
                 //Log.e("跑了没有1","跑了没有2");
             }else if(mDeviceList.size() == 3){
                 name1 = updatename1.getText().toString();
@@ -792,7 +841,9 @@ public class MainActivity extends AppCompatActivity {
                 updatename1.setText(name2);
                 update_info1.setText(info2);
                 updatename2.setText("设备名称:");
-                update_info2.setText("未连接设备!");
+                update_info2.setText("未连接!");
+                update_start2.setVisibility(View.INVISIBLE);
+                update_version2.setVisibility(View.INVISIBLE);
                 //Log.e("跑了没有1","跑了没有3");
             }
         }else if (which ==2){
@@ -802,16 +853,22 @@ public class MainActivity extends AppCompatActivity {
                 updatename1.setText(name2);
                 update_info1.setText(info2);
                 updatename2.setText("设备名称:");
-                update_info2.setText("未连接设备!");
+                update_info2.setText("未连接!");
+                update_start2.setVisibility(View.INVISIBLE);
+                update_version2.setVisibility(View.INVISIBLE);
                 //Log.e("跑了没有2","跑了没有3");
             }else if(mDeviceList.size() == 2){
                 updatename1.setText("设备名称:");
-                update_info1.setText("未连接设备!");
+                update_info1.setText("未连接!");
+                update_start1.setVisibility(View.INVISIBLE);
+                update_version1.setVisibility(View.INVISIBLE);
                 //Log.e("跑了没有2","跑了没有2");
             }
         }else if (which ==3){
             updatename2.setText("设备名称:");
-            update_info2.setText("未连接设备!");
+            update_info2.setText("未连接!");
+            update_start2.setVisibility(View.INVISIBLE);
+            update_version2.setVisibility(View.INVISIBLE);
             //Log.e("跑了没有3","跑了没有3");
         }
     }
@@ -1417,6 +1474,72 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void update_start(View v){
+        ctrolThread.getBarProgress();
+        ctrolThread.writeBleDevice(mDeviceList.get(singleSelectedId));
+        ctrolThread.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+        sendMessage(1);
+    }
+
+    public void update_start1(View v){
+        ctrolThread1.getBarProgress();
+        ctrolThread1.writeBleDevice(mDeviceList.get(singleSelectedId));
+        ctrolThread1.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+        sendMessage(2);
+    }
+
+    public void update_start2(View v){
+        ctrolThread2.getBarProgress();
+        ctrolThread2.writeBleDevice(mDeviceList.get(singleSelectedId));
+        ctrolThread2.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+        sendMessage(3);
+    }
+
+    public void update_version(View v){
+        byte[] bytes = UpdateOpt.wakeupData;        //写入发送数据
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Log.i("等待延时：", "wait...");
+        }
+
+        WriteComm(mDeviceList.get(0) ,writecharacteristicList.get(0), bytes, bytes.length);
+        byte[] data = {0x00,0x00};
+        Log.w("获取版本:",String.valueOf(0));
+        comm_send(mDeviceList.get(0) ,writecharacteristicList.get(0),
+                COMM_TRANS_TYPE_SEND,COMM_CMD_TYPE_VERSION,data,2);
+    }
+
+    public void update_version1(View v){
+        byte[] bytes = UpdateOpt.wakeupData;        //写入发送数据
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Log.i("等待延时：", "wait...");
+        }
+
+        WriteComm(mDeviceList.get(1) ,writecharacteristicList.get(1), bytes, bytes.length);
+        byte[] data = {0x00,0x00};
+        Log.w("获取版本:",String.valueOf(1));
+        comm_send(mDeviceList.get(1) ,writecharacteristicList.get(1),
+                COMM_TRANS_TYPE_SEND,COMM_CMD_TYPE_VERSION,data,2);
+    }
+
+    public void update_version2(View v){
+        byte[] bytes = UpdateOpt.wakeupData;        //写入发送数据
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Log.i("等待延时：", "wait...");
+        }
+
+        WriteComm(mDeviceList.get(2) ,writecharacteristicList.get(2), bytes, bytes.length);
+        byte[] data = {0x00,0x00};
+        Log.w("获取版本:",String.valueOf(2));
+        comm_send(mDeviceList.get(2) ,writecharacteristicList.get(2),
+                COMM_TRANS_TYPE_SEND,COMM_CMD_TYPE_VERSION,data,2);
     }
 
 }
