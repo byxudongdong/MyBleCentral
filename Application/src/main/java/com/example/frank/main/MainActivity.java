@@ -418,6 +418,7 @@ public class MainActivity extends AppCompatActivity {
                 //clearDevice();
                 mDeviceContainer.clear();
                 mDeviceConnectable.clear();
+                mDevRssiValues.clear();
                 new Thread(new Runnable() {
                     public void run() {
                         try {
@@ -432,9 +433,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_stop:
                 scanLeDevice(false);
                 if(mDeviceList.size() >= 1) {
-                    Removeview(1);
-                    Removeview(2);
-                    Removeview(3);
+                    RemoveviewAll();
                 }
                 clearDevice();
                 break;
@@ -452,6 +451,7 @@ public class MainActivity extends AppCompatActivity {
         mBluetoothLeService.disconnect();
         mDeviceContainer.clear();
         mDeviceConnectable.clear();
+        mDevRssiValues.clear();
         //写数据的服务和characteristic
         mnotyGattServiceList.clear();
         writecharacteristicList.clear();
@@ -474,11 +474,13 @@ public class MainActivity extends AppCompatActivity {
                         {
                             mScanning = false;
                             mBluetoothAdapter.stopLeScan(mLeScanCallback);
+
                             Collections.sort(mDeviceContainer, new ComparatorValues());
                             Collections.sort(mDeviceConnectable, new ComparatorValues());
 
                             if(mDeviceContainer.isEmpty() ){
                                 mDeviceContainer.add(mDeviceConnectable.get(0));
+                                sendMessage(56);
                             }
                             sendMessage(50);
                             invalidateOptionsMenu();
@@ -493,10 +495,12 @@ public class MainActivity extends AppCompatActivity {
             mScanning = true;
             //Devicelist.setClickable(false);
             mBluetoothAdapter.startLeScan(mLeScanCallback);
+            sendMessage(56);
         } else {
             mScanning = false;
             //Devicelist.setClickable(true);
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            sendMessage(56);
         }
 
         invalidateOptionsMenu();
@@ -810,6 +814,22 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void RemoveviewAll(){
+        updatename.setText("设备名称:");
+        update_info.setText("未连接!");
+        update_start.setVisibility(View.INVISIBLE);
+        update_version.setVisibility(View.INVISIBLE);
+
+        updatename1.setText("设备名称:");
+        update_info1.setText("未连接!");
+        update_start1.setVisibility(View.INVISIBLE);
+        update_version1.setVisibility(View.INVISIBLE);
+
+        updatename2.setText("设备名称:");
+        update_info2.setText("未连接!");
+        update_start2.setVisibility(View.INVISIBLE);
+        update_version2.setVisibility(View.INVISIBLE);
+    }
     public String name1,info1,name2,info2;
     public void Removeview(int which)
     {
@@ -1274,6 +1294,10 @@ public class MainActivity extends AppCompatActivity {
                 case 52:
                     Devicelist.setClickable(true);
                     Devicelist.setText("可用设备");
+                    devicelist(null);
+                    break;
+                case 56:
+                    numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
                     break;
             }
         }
@@ -1478,22 +1502,22 @@ public class MainActivity extends AppCompatActivity {
 
     public void update_start(View v){
         ctrolThread.getBarProgress();
-        ctrolThread.writeBleDevice(mDeviceList.get(singleSelectedId));
-        ctrolThread.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+        ctrolThread.writeBleDevice(mDeviceList.get(0));
+        ctrolThread.writeGattCharacteristic(writecharacteristicList.get(0));
         sendMessage(1);
     }
 
     public void update_start1(View v){
         ctrolThread1.getBarProgress();
-        ctrolThread1.writeBleDevice(mDeviceList.get(singleSelectedId));
-        ctrolThread1.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+        ctrolThread1.writeBleDevice(mDeviceList.get(1));
+        ctrolThread1.writeGattCharacteristic(writecharacteristicList.get(1));
         sendMessage(2);
     }
 
     public void update_start2(View v){
         ctrolThread2.getBarProgress();
-        ctrolThread2.writeBleDevice(mDeviceList.get(singleSelectedId));
-        ctrolThread2.writeGattCharacteristic(writecharacteristicList.get(singleSelectedId));
+        ctrolThread2.writeBleDevice(mDeviceList.get(2));
+        ctrolThread2.writeGattCharacteristic(writecharacteristicList.get(2));
         sendMessage(3);
     }
 
