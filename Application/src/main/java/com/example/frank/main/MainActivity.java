@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<BluetoothDevice> mDeviceList = new ArrayList<BluetoothDevice>();  //已连接的设备
 
     CtrolThread ctrolThread = new CtrolThread();
-    CtrolThread1 ctrolThread1 = new CtrolThread1();
+    CtrolThread ctrolThread1 = new CtrolThread();
     CtrolThread ctrolThread2 = new CtrolThread();
     CtrolThread ctrolThread3 = new CtrolThread();
     CtrolThread ctrolThread4 = new CtrolThread();
@@ -195,11 +195,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public int singleSelectedId1;
+    int singleSelectedId1 = 0;
     public void devicelist(View v){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setIcon(R.drawable.logo);
         builder.setTitle("可用设备：");
+        singleSelectedId1 = 0;
         LinkedList<BluetoothDevice> mDeviceContainercopy = new LinkedList<BluetoothDevice>();
         for(BluetoothDevice device: mDeviceContainer) {
             if(!mDeviceList.contains(device)) {
@@ -233,8 +234,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // TODO Auto-generated method stub
-                Toast.makeText(MainActivity.this, "您选中了："+strDevice[singleSelectedId1], Toast.LENGTH_SHORT).show();
-                mBluetoothLeService.connect(strMAC[singleSelectedId1]);      //连接设备———————————————
+                if(mDeviceList.size() <3) {
+                    Toast.makeText(MainActivity.this, "您选中了：" + strDevice[singleSelectedId1], Toast.LENGTH_SHORT).show();
+                    mBluetoothLeService.connect(strMAC[singleSelectedId1]);      //连接设备———————————————
+                }
             }
         });
 
@@ -291,6 +294,7 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setIcon(R.drawable.logo);
         builder.setTitle(getString(R.string.device_list));
+        singleSelectedId = 0;
         if (!mDeviceList.isEmpty()) {
             strDevice = new String[mDeviceList.size()];
             strMAC = new String[mDeviceList.size()];
@@ -677,14 +681,17 @@ public class MainActivity extends AppCompatActivity {
                                 AddCtrolview(1, mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
                                 update_start.setVisibility(View.VISIBLE);
                                 update_version.setVisibility(View.VISIBLE);
+
                             }else if (mDeviceList.size() == 2) {
                                 AddCtrolview(2 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
                                 update_start1.setVisibility(View.VISIBLE);
                                 update_version1.setVisibility(View.VISIBLE);
+
                             }else if (mDeviceList.size() == 3) {
                                 AddCtrolview(3 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
                                 update_start2.setVisibility(View.VISIBLE);
                                 update_version2.setVisibility(View.VISIBLE);
+
                             }
                             //写数据的服务和characteristic
                             mnotyGattService = mBluetoothLeService.getSupportedGattService(bluetoothDevice, "0000fff0-0000-1000-8000-00805f9b34fb");
@@ -840,6 +847,7 @@ public class MainActivity extends AppCompatActivity {
                 update_info.setText("未连接!");
                 update_start.setVisibility(View.INVISIBLE);
                 update_version.setVisibility(View.INVISIBLE);
+                ctrolThread.setBarProgress(0);
                 //Log.e("跑了没有1","跑了没有1");
             }else if(mDeviceList.size() == 2) {
                 name1 = updatename1.getText().toString();
@@ -850,6 +858,9 @@ public class MainActivity extends AppCompatActivity {
                 update_info1.setText("未连接!");
                 update_start1.setVisibility(View.INVISIBLE);
                 update_version1.setVisibility(View.INVISIBLE);
+                ctrolThread = ctrolThread1;
+                ctrolThread1 = null;
+
                 //Log.e("跑了没有1","跑了没有2");
             }else if(mDeviceList.size() == 3){
                 name1 = updatename1.getText().toString();
@@ -864,6 +875,11 @@ public class MainActivity extends AppCompatActivity {
                 update_info2.setText("未连接!");
                 update_start2.setVisibility(View.INVISIBLE);
                 update_version2.setVisibility(View.INVISIBLE);
+                ctrolThread = ctrolThread1;
+                ctrolThread1 = ctrolThread2;
+                ctrolThread2.setBarProgress(0);
+                ctrolThread2 = null;
+
                 //Log.e("跑了没有1","跑了没有3");
             }
         }else if (which ==2){
@@ -876,12 +892,20 @@ public class MainActivity extends AppCompatActivity {
                 update_info2.setText("未连接!");
                 update_start2.setVisibility(View.INVISIBLE);
                 update_version2.setVisibility(View.INVISIBLE);
+
+                ctrolThread1 = ctrolThread2;
+                ctrolThread2.setBarProgress(0);
+
+                ctrolThread2 = null;
+
                 //Log.e("跑了没有2","跑了没有3");
             }else if(mDeviceList.size() == 2){
                 updatename1.setText("设备名称:");
                 update_info1.setText("未连接!");
                 update_start1.setVisibility(View.INVISIBLE);
                 update_version1.setVisibility(View.INVISIBLE);
+                ctrolThread1.setBarProgress(0);
+
                 //Log.e("跑了没有2","跑了没有2");
             }
         }else if (which ==3){
@@ -889,6 +913,7 @@ public class MainActivity extends AppCompatActivity {
             update_info2.setText("未连接!");
             update_start2.setVisibility(View.INVISIBLE);
             update_version2.setVisibility(View.INVISIBLE);
+            ctrolThread2.setBarProgress(0);
             //Log.e("跑了没有3","跑了没有3");
         }
     }
@@ -1151,11 +1176,18 @@ public class MainActivity extends AppCompatActivity {
 //                mLineProgressBar.setProgress(progress);
 //                mSolidProgressBar.setProgress(progress);
                 mCustomProgressBar1.setProgress(progress);
-                if(mDeviceList.size() == 1) {
+                if(mDeviceList.size() == 0) {
+                    mProgressBar.setProgress(0);
+                    mProgressBar1.setProgress(0);
+                    mProgressBar2.setProgress(0);
+                }else if(mDeviceList.size() == 1) {
                     mProgressBar.setProgress(ctrolThread.getBarProgress());
+                    mProgressBar1.setProgress(0);
+                    mProgressBar2.setProgress(0);
                 }else if(mDeviceList.size() == 2){
                     mProgressBar.setProgress(ctrolThread.getBarProgress());
                     mProgressBar1.setProgress(ctrolThread1.getBarProgress());
+                    mProgressBar2.setProgress(0);
                 }else if(mDeviceList.size() == 3){
                     mProgressBar.setProgress(ctrolThread.getBarProgress());
                     mProgressBar1.setProgress(ctrolThread1.getBarProgress());
