@@ -653,18 +653,26 @@ public class MainActivity extends AppCompatActivity {
 //                        String newStirng = deviceText + String.valueOf(deviceNum);
 //                        numDevice.setText(newStirng );
 //                    }
-                    for(int ii=0;ii<mDeviceList.size();ii++){
-                        if(mDeviceList.get(ii).getAddress().equals(strAddress))
-                        {
-                            Removeview(ii+1);
-                            //Devicelayout.remove(ii);
-                            mDeviceList.remove(ii);
-                            writecharacteristicList.remove(ii);
-                            numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
-                            Log.e("设备断开","去除列表项");
-                        }
+//                    for(int ii=0;ii<mDeviceList.size();ii++){
+//                        if(mDeviceList.get(ii).getAddress().equals(strAddress))
+//                        {
+//                            Removeview(ii+1);
+//                            //Devicelayout.remove(ii);
+//                            mDeviceList.remove(ii);
+//                            writecharacteristicList.remove(ii);
+//                            numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
+//                            Log.e("设备断开","去除列表项");
+//                        }
+//
+//                    }
+                    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(strAddress);
+                    int index = mDeviceList.indexOf(device);
+                    Removeview(index+1);
+                    mDeviceList.remove(device);
+                    writecharacteristicList.remove(index);
+                    numDevice.setText(deviceText + mDeviceContainer.size() + "/" + mDeviceList.size());
+                    Log.e("设备断开","去除列表项:"+ String.valueOf(index));
 
-                    }
                 }
 
                 invalidateOptionsMenu();
@@ -681,16 +689,19 @@ public class MainActivity extends AppCompatActivity {
                                 AddCtrolview(1, mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
                                 update_start.setVisibility(View.VISIBLE);
                                 update_version.setVisibility(View.VISIBLE);
+                                ctrolThread.setBarProgress(0);
 
                             }else if (mDeviceList.size() == 2) {
                                 AddCtrolview(2 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
                                 update_start1.setVisibility(View.VISIBLE);
                                 update_version1.setVisibility(View.VISIBLE);
+                                ctrolThread1.setBarProgress(0);
 
                             }else if (mDeviceList.size() == 3) {
                                 AddCtrolview(3 ,mDeviceList.get(mDeviceList.size() - 1).getName(), "就绪！");
                                 update_start2.setVisibility(View.VISIBLE);
                                 update_version2.setVisibility(View.VISIBLE);
+                                ctrolThread2.setBarProgress(0);
 
                             }
                             //写数据的服务和characteristic
@@ -716,8 +727,8 @@ public class MainActivity extends AppCompatActivity {
                 byte[] devicedata = new byte[data.length-17];
                 System.arraycopy(data,17,devicedata,0,data.length-17);
 
-                Log.e("接收数据：",new String(devicedata));
-                PrintLog.printHexString("收到的数据回应：",devicedata);
+                //Log.e("接收数据：",new String(devicedata));
+                //PrintLog.printHexString("收到的数据回应：",devicedata);
                 if (!String.valueOf(devicedata ).equals("")) {
                     if (mDataField.length() > 900) {
                         mDataField.setText("");
@@ -859,7 +870,9 @@ public class MainActivity extends AppCompatActivity {
                 update_start1.setVisibility(View.INVISIBLE);
                 update_version1.setVisibility(View.INVISIBLE);
                 ctrolThread = ctrolThread1;
-                ctrolThread1 = null;
+                ctrolThread1 = new CtrolThread();
+                ctrolThread1.updateFlag = false;
+                ctrolThread1.setBarProgress(0);
 
                 //Log.e("跑了没有1","跑了没有2");
             }else if(mDeviceList.size() == 3){
@@ -877,9 +890,9 @@ public class MainActivity extends AppCompatActivity {
                 update_version2.setVisibility(View.INVISIBLE);
                 ctrolThread = ctrolThread1;
                 ctrolThread1 = ctrolThread2;
+                ctrolThread2 = new CtrolThread();
+                ctrolThread2.updateFlag = false;
                 ctrolThread2.setBarProgress(0);
-                ctrolThread2 = null;
-
                 //Log.e("跑了没有1","跑了没有3");
             }
         }else if (which ==2){
@@ -894,10 +907,9 @@ public class MainActivity extends AppCompatActivity {
                 update_version2.setVisibility(View.INVISIBLE);
 
                 ctrolThread1 = ctrolThread2;
+                ctrolThread2 = new CtrolThread();
                 ctrolThread2.setBarProgress(0);
-
-                ctrolThread2 = null;
-
+                ctrolThread2.updateFlag = false;
                 //Log.e("跑了没有2","跑了没有3");
             }else if(mDeviceList.size() == 2){
                 updatename1.setText("设备名称:");

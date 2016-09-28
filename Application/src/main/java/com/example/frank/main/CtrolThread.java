@@ -375,7 +375,7 @@ public class CtrolThread {
             startTime = System.currentTimeMillis();  //開始時間
             break;
             case UPDATE_STEP_SEND_IMAGE:
-                Log.w("发送升级文件0：", "发送升级文件000000:"+String.valueOf(update_sendSize)
+                Log.i("发送升级文件0：", "发送升级文件000000:"+String.valueOf(update_sendSize)
                         + ":"+String.valueOf(filedataLen) );
                 //sendMessage( 3 );
                 /* 发送升级数据 */
